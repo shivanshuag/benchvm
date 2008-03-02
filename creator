@@ -17,7 +17,7 @@ Getopt::Long::Configure ('bundling');
 my $user = `whoami`;
 chomp $user;
 if($user ne 'root'){
-  print 'Superuser privileges are necessary for some parts of this script; '
+  print 'Superuser privileges are necessary for some parts of this script; ';
   print 'use sudo.' . "\n";
   exit(1);
 }
@@ -25,12 +25,12 @@ if($user ne 'root'){
 #General
 my $help;
 my $count = 4;
-my $location = '/bsvb/creation_script/';
-my $img_name = 'bsvb_guest';
+my $location = './';
+my $img_name = 'test';
 
 #Debootstrap Options
 my $arch = 'amd64';
-my $apt_include = 'bonnie++,iozone3,lmbench,dbench';
+my $apt_include = 'bonnie++';
 my $distro = 'gutsy';
 my $master_mount_dir = 'master';
 my $mirror = 'http://archive.ubuntu.com/ubuntu';
@@ -73,7 +73,7 @@ if($help){
 #  print "  --swap_size [size]\t\t\t\tSize of swap\n";
 #  print "  --fs_type [type]\t\t\t\tFilesystem type (e.g. ext3)\n";
   print "  -h --help\t\t\t\t\tThis.\n";
-  exit;
+  exit(1);
 }
 
 
