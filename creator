@@ -22,47 +22,46 @@ if($user ne 'root'){
   exit(1);
 }
 
-#################
-#  Global Vars  #
-#################
-
 #General
-my $verbose = 0;
 my $help;
 my $count = 4;
 my $location = './';
 my $img_name = 'test';
-my $dev_device = 0;
-my $mount_dir = 0;
-my $clean = 0;
 
 #Debootstrap Options
-my $arch = 'i686';
+my $arch = 'amd64';
 my $apt_include = 'bonnie++';
 my $distro = 'gutsy';
+my $master_mount_dir = 'master';
 my $mirror = 'http://archive.ubuntu.com/ubuntu';
 
 
 #DD Config Options
 my $dd_bs = 1024;
 my $dd_count = 1;
-my $dd_seek = 1;
+my $dd_seek = 4095;
+
+#Partitioning
+#my $swap_size = 0;
+#my $fs_type = 'ext3';
 
 GetOptions ('c|count=i' =>\$count,
             'a|arch=s' => \$arch,
             'd|distro=s' => \$distro,
             'l|location=s' => \$location,
             'n|name=s' => \$img_name,
+            'd|dir=s' => \$master_mount_dir, 
             'm|mirror=s' => \$mirror,
             'ddbs=i' => \$dd_bs,
+            'ddcount=i' => \$dd_count,
             's|ddseek=i' => \$dd_seek,
-            'h|help' => \$help,
-            'v' => $verbose,
-            'clean' => $clean);
+            'h|help' => \$help);
+#'swap=i' => \$swap_size, 
+#'fstype=s' => \$fs_type, 
 
 # Display help
-if($help || ($#ARGV+1) != 1){
-  print 'Usage: [options] imagename' . "\n";
+if($help){
+  print 'Usage: [options] image-name' . "\n";
   print "  -c [count], --count [count]\t\t\tNumber of IMGs to Create\n";
   print "  -a [arch], --arch [arch]\t\t\tArchitecture to Install\n";
   print "  -d [distro], --distro [distro]\t\tDistro to Install\n";
@@ -71,111 +70,102 @@ if($help || ($#ARGV+1) != 1){
   print "  --ddbs [size]\t\t\t\t\tBS for DD command\n";
   print "  --ddcount [count]\t\t\t\tCount for DD command\n";
   print "  -s [count], --ddseek [count]\t\t\tSeek for DD command\n";
-  print "  --clean\t\t\t\tclean old image build\n";
-  print "  -v\t\t\t\tverbose\n";
+#  print "  --swap_size [size]\t\t\t\tSize of swap\n";
+#  print "  --fs_type [type]\t\t\t\tFilesystem type (e.g. ext3)\n";
   print "  -h --help\t\t\t\t\tThis.\n";
   exit(1);
 }
 
-#################
-#  Subroutines  #
-#################
 
-my $time =  time();
-my $logfilename="creator.log.$img_name.$time";
-open(LOGFILE, ">$logfilename") or die("Unable to open logfile: $logfilename");
+  my $dd_command;
+  my $dev_device;
+  my $losetup_command;
+  my $partition_command;
+  my $format_command;
+  my $mkdir_command;
+  my $mount_command;
+  my $debootstrap_command;
+  my $umount_command;
+  my $rmdir_command;
+  my $ulosetup_command;
+  my @copy_command;
 
-sub log_info {
-  print LOGFILE "$_[0]\n";
-  print "$_[0]\n";
-}
+  #################
+  #    Assemble   #
+  #################
+  #make initial dd
+  $dd_command = 'dd if=/dev/zero of=' . $location . $img_name . '.img ' . 
+                'bs=' . $dd_bs . 'K count=' . $dd_count . ' seek=' . $dd_seek;
 
-sub log_fatal {
-  print LOGFILE "$_[0]\n";
-  clean_env();
-  die("$_[0]");
-}
+  #loopback mount dd
+  $dev_device = `losetup -f`;
+  chomp($dev_device);
+  $losetup_command = 'losetup ' . $dev_device . ' ' . $location . $img_name . 
+                     '.img';
 
-sub ex_quiet {
-  my($command,$name,$do_not_fatal) = @_;
-  if ($name) {
-    log_info("TASK: $name");
+  #format
+  $format_command = 'mkfs.ext3 ' . $dev_device;
+
+  #mkdir and mount
+  $mkdir_command = 'mkdir ' . $location . $master_mount_dir;
+  $mount_command = 'mount ' . $dev_device . " " . $location . 
+                   $master_mount_dir;
+
+  #debootstrap
+  $debootstrap_command = 'debootstrap --arch ' . $arch . ' --include=' . 
+                         $apt_include . ' ' . $distro . ' ' . 
+                         $location . $master_mount_dir . ' ' . $mirror;
+
+  #umount
+  $umount_command = 'umount ' . $location . $master_mount_dir;
+
+  #rmdir
+  $rmdir_command = 'rmdir ' . $location . $master_mount_dir;
+
+  #ulosetup
+  $ulosetup_command = 'losetup -d ' . $dev_device;
+
+  #?!?!?!? To copy as .img or all files ?!?!?!?!?!
+  #copy (whole .img for now)
+  for (my $i=1; $i<$count; $i++){
+    push(@copy_command, 'cp ' . $location . $img_name . '.img ' . $location . 
+                        $img_name . '_' . $i . '.img');
   }
-  if ($verbose) {
-    log_info("COMMAND: $command");
-  }
-  my $ret = `$command 2>&1`;
-  if ($? != 0) {
-    log_info("OUTPUT: $ret\n");
-    if ($do_not_fatal) {
-      log_info("ERROR: Return Code $?\n");
-    } else {
-      log_fatal("ERROR: Return Code $?\n");
-    }
-  }
-  return $ret;
-}
 
-sub ex_verbose {
-  my($command,$name) = @_;
-  if ($name) {
-    log_info("TASK: $name");
-  }
-  if ($verbose) { 
-    log_info("COMMAND: $command");
-  }
-  system("$command");
-  if ($? != 0) {
-    log_fatal("ERROR: Return Code $?");
-  }
-}
+  ###########
+  #   Run   #
+  ###########
+  print 'dd-ing...' . "\n";
+  (system($dd_command) == 0) or die ("dd failed ($?)");
 
-sub clean_env() {
-  ex_quiet('umount $mount_dir', "[CLEAN] Unmounting Temporary Directory");
-  ex_quiet('rmdir $mount_dir', "[CLEAN] Removing Temporary Directory");
-  if($dev_device) {
-    ex_quiet('losetup -d $dev_device', "[CLEAN] Removing Loopback Device");
-  } else {
-    log_info("[CLEAN] Could not find dev device for losetup -d");
-  }
-}
+  print 'losetup-ing...' . "\n";
+  (system($losetup_command) == 0) or die ("losetup failed ($?)");
 
-#?!?!?!? To copy as .img or all files ?!?!?!?!?!
-#copy (whole .img for now)
-#my @copy_command;
-#for (my $i=1; $i<$count; $i++){
-#  push(@copy_command, 'cp ' . $location . $img_name . '.img ' . $location . 
-#                      $img_name . '_' . $i . '.img');
-#}
+  print 'mkfs.ext3-ing...' . "\n";
+  (system($format_command) == 0) or die ("format failed ($?)");
 
-###########
-#   Run   #
-###########
+  print 'mkdir-ing...' . "\n";
+  (system($mkdir_command) == 0) or die ("mkdir failed ($?)");
 
-#Parse Command Line vars after options
-$img_name = $ARGV[0];
-$mount_dir = $location . 'mnt-' . $img_name;
-if($clean) {
-  clean_env();
-  exit(0);
-}
+  print 'mount-ing...' . "\n";
+  (system($mount_command) == 0) or die ("mount failed ($?)");
 
-ex_quiet('dd if=/dev/zero of=' . $location . $img_name . '.img ' . 'bs=' . 
-         $dd_bs . 'K count=' . $dd_count . ' seek=' . $dd_seek,
-         "Creating image file");
-$dev_device = ex_quiet('losetup -f', "Getting Free Loopback Device");
-ex_quiet('losetup ' . $dev_device . ' ' . $location . $img_name,
-         "Creating Loopback Block Device");
-ex_quiet('mkfs.ext3 ' . $dev_device, "Creating Loopback Block Device");
+  print 'debootstrap-ing...' . "\n";
+  (system($debootstrap_command) == 0) or die ("debootstrap failed ($?)");
 
-ex_quiet('mkdir -pf ' . $mount_dir, "Creating Temporary Mount Directory");
-ex_verbose('debootstrap --arch ' . $arch . ' --include=' . $apt_include . ' ' . $distro . 
-           ' ' . $location . $img_name . ' ' . $mirror, 
-           "Creating base guest filesystem");
+  print 'umount-ing...' . "\n";
+  (system($umount_command) == 0) or die ("umount failed ($?)");
+  
+  print 'rmdir-ing...' . "\n";
+  (system($rmdir_command) == 0) or die ("rmdir failed ($?)");
 
-#foreach (@copy_command) {
-#  print 'CREATOR: copy-ing...' . "\n";
-#  (system($_) == 0) or die ("copy failed ($?)");
-#}  
+  print 'ulosetup-ing...' . "\n";
+  (system($ulosetup_command) == 0) or die ("ulosetup failed ($?)");
 
-clean_env();
+  foreach (@copy_command) {
+    print 'copy-ing...' . "\n";
+    (system($_) == 0) or die ("copy failed ($?)");
+  }  
+
+  #?!?!?!? Do we need to edit any files ?!?!?!?!?!
+
