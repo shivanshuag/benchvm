@@ -53,7 +53,7 @@ GetOptions ('c|count=i' =>\$count,
             'v' => $verbose);
 
 # Display help
-if($help){
+if($help || ($#ARGV+1) != 1){
   print 'Usage: [options] imagename' . "\n";
   print "  -c [count], --count [count]\t\t\tNumber of IMGs to Create\n";
   print "  -a [arch], --arch [arch]\t\t\tArchitecture to Install\n";
@@ -67,15 +67,15 @@ if($help){
   print "  -v \t\t\t\tverbose\n";
   exit(1);
 }
-
-print $ARGV[0];
-exit(1);
+$img_name = $ARGV[0];
 
 #################
 #  Subroutines  #
 #################
 
-#open(LOGFILE, ">makeguest.log.$uuid"
+my $logfilename="creator.log.$img_name";
+open(LOGFILE, ">$logfilename") or die("Unable to open logfile: $logfilename");
+
 sub log_info {
   print LOGFILE "$_[0]\n";
   print "$_[0]\n";
@@ -87,13 +87,14 @@ sub log_fatal {
 }
 
 sub ex_quiet {
-  if ($_[1]) {
-    log_info("TASK: $_[1]");
+  my($command,$name) = @_;
+  if ($name) {
+    log_info("TASK: $name");
   }
   if ($verbose) {
-    log_info("COMMAND: $_[0]");
+    log_info("COMMAND: $command");
   }
-  my $ret = `$_[0] 2>&1`;
+  my $ret = `$command 2>&1`;
   if ($? != 0) {
     log_info("OUTPUT: $ret\n");
     log_fatal("ERROR: Return Code $?\n");
@@ -102,18 +103,18 @@ sub ex_quiet {
 }
 
 sub ex_verbose {
-  if ($_[1]) {
-    log_info("TASK: $_[1]");
+  my($command,$name) = @_;
+  if ($name) {
+    log_info("TASK: $name");
   }
   if ($verbose) { 
-    log_info("COMMAND: $_[0]");
+    log_info("COMMAND: $command");
   }
-  system("$_[0]");
+  system("$command");
   if ($? != 0) {
     log_fatal("ERROR: Return Code $?");
   }
 }
-
 
 #################
 #    Assemble   #
@@ -162,6 +163,7 @@ for (my $i=1; $i<$count; $i++){
 ###########
 #   Run   #
 ###########
+ex_quiet
 print 'CREATOR: dd-ing...' . "\n";
 (system($dd_command) == 0) or die ("dd failed ($?)");
 
