@@ -23,39 +23,38 @@ if($user ne 'root'){
 }
 
 #General
+my $verbose = 0;
 my $help;
 my $count = 4;
 my $location = './';
 my $img_name = 'test';
 
 #Debootstrap Options
-my $arch = 'amd64';
+my $arch = 'i686';
 my $apt_include = 'bonnie++';
 my $distro = 'gutsy';
-my $master_mount_dir = 'master';
 my $mirror = 'http://archive.ubuntu.com/ubuntu';
 
 
 #DD Config Options
-my $dd_bs = 1024;
+my $dd_bs = 1;
 my $dd_count = 1;
-my $dd_seek = 4095;
+my $dd_seek = 1;
 
 GetOptions ('c|count=i' =>\$count,
             'a|arch=s' => \$arch,
             'd|distro=s' => \$distro,
             'l|location=s' => \$location,
             'n|name=s' => \$img_name,
-            'd|dir=s' => \$master_mount_dir, 
             'm|mirror=s' => \$mirror,
             'ddbs=i' => \$dd_bs,
-            'ddcount=i' => \$dd_count,
             's|ddseek=i' => \$dd_seek,
-            'h|help' => \$help);
+            'h|help' => \$help,
+            'v' => $verbose);
 
 # Display help
 if($help){
-  print 'Usage:' . "\n";
+  print 'Usage: [options] imagename' . "\n";
   print "  -c [count], --count [count]\t\t\tNumber of IMGs to Create\n";
   print "  -a [arch], --arch [arch]\t\t\tArchitecture to Install\n";
   print "  -d [distro], --distro [distro]\t\tDistro to Install\n";
@@ -65,60 +64,96 @@ if($help){
   print "  --ddcount [count]\t\t\t\tCount for DD command\n";
   print "  -s [count], --ddseek [count]\t\t\tSeek for DD command\n";
   print "  -h --help\t\t\t\t\tThis.\n";
+  print "  -v \t\t\t\tverbose\n";
   exit(1);
 }
 
+print $ARGV[0];
+exit(1);
 
-my $dd_command;
-my $dev_device;
-my $losetup_command;
-my $partition_command;
-my $format_command;
-my $mkdir_command;
-my $mount_command;
-my $debootstrap_command;
-my $umount_command;
-my $rmdir_command;
-my $ulosetup_command;
-my @copy_command;
+#################
+#  Subroutines  #
+#################
+
+#open(LOGFILE, ">makeguest.log.$uuid"
+sub log_info {
+  print LOGFILE "$_[0]\n";
+  print "$_[0]\n";
+}
+
+sub log_fatal {
+  print LOGFILE "$_[0]\n";
+  die("$_[0]");
+}
+
+sub ex_quiet {
+  if ($_[1]) {
+    log_info("TASK: $_[1]");
+  }
+  if ($verbose) {
+    log_info("COMMAND: $_[0]");
+  }
+  my $ret = `$_[0] 2>&1`;
+  if ($? != 0) {
+    log_info("OUTPUT: $ret\n");
+    log_fatal("ERROR: Return Code $?\n");
+  }
+  return $ret;
+}
+
+sub ex_verbose {
+  if ($_[1]) {
+    log_info("TASK: $_[1]");
+  }
+  if ($verbose) { 
+    log_info("COMMAND: $_[0]");
+  }
+  system("$_[0]");
+  if ($? != 0) {
+    log_fatal("ERROR: Return Code $?");
+  }
+}
+
 
 #################
 #    Assemble   #
 #################
+
 #make initial dd
-$dd_command = 'dd if=/dev/zero of=' . $location . $img_name . '.img ' . 
+my $dd_command = 'dd if=/dev/zero of=' . $location . $img_name . '.img ' . 
               'bs=' . $dd_bs . 'K count=' . $dd_count . ' seek=' . $dd_seek;
 
 #loopback mount dd
-$dev_device = `losetup -f`;
+my $dev_device = `losetup -f`;
 chomp($dev_device);
-$losetup_command = 'losetup ' . $dev_device . ' ' . $location . $img_name . 
+my $losetup_command = 'losetup ' . $dev_device . ' ' . $location . $img_name . 
                    '.img';
 
 #format
-$format_command = 'mkfs.ext3 ' . $dev_device;
+my $format_command = 'mkfs.ext3 ' . $dev_device;
 
 #mkdir and mount
-$mkdir_command = 'mkdir ' . $location . $master_mount_dir;
-$mount_command = 'mount ' . $dev_device . " " . $location . 
-                 $master_mount_dir;
+my $mkdir_command = 'mkdir ' . $location . $img_name;
+my $mount_command = 'mount ' . $dev_device . " " . $location . 
+                 $img_name;
 
 #debootstrap
-$debootstrap_command = 'debootstrap --arch ' . $arch . ' --include=' . 
+my $debootstrap_command = 'debootstrap --arch ' . $arch . ' --include=' . 
                        $apt_include . ' ' . $distro . ' ' . 
-                       $location . $master_mount_dir . ' ' . $mirror;
+                       $location . $img_name . ' ' . $mirror;
 
 #umount
-$umount_command = 'umount ' . $location . $master_mount_dir;
+my $umount_command = 'umount ' . $location . $img_name;
 
 #rmdir
-$rmdir_command = 'rmdir ' . $location . $master_mount_dir;
+my $rmdir_command = 'rmdir ' . $location . $img_name;
 
 #ulosetup
-$ulosetup_command = 'losetup -d ' . $dev_device;
+my $ulosetup_command = 'losetup -d ' . $dev_device;
 
 #?!?!?!? To copy as .img or all files ?!?!?!?!?!
 #copy (whole .img for now)
+my @copy_command;
 for (my $i=1; $i<$count; $i++){
   push(@copy_command, 'cp ' . $location . $img_name . '.img ' . $location . 
                       $img_name . '_' . $i . '.img');
@@ -127,37 +162,36 @@ for (my $i=1; $i<$count; $i++){
 ###########
 #   Run   #
 ###########
-print 'dd-ing...' . "\n";
+print 'CREATOR: dd-ing...' . "\n";
 (system($dd_command) == 0) or die ("dd failed ($?)");
 
-print 'losetup-ing...' . "\n";
+print 'CREATOR: losetup-ing...' . "\n";
 (system($losetup_command) == 0) or die ("losetup failed ($?)");
 
-print 'mkfs.ext3-ing...' . "\n";
+print 'CREATOR: mkfs.ext3-ing...' . "\n";
 (system($format_command) == 0) or die ("format failed ($?)");
 
-print 'mkdir-ing...' . "\n";
+print 'CREATOR: mkdir-ing...' . "\n";
 (system($mkdir_command) == 0) or die ("mkdir failed ($?)");
 
-print 'mount-ing...' . "\n";
+print 'CREATOR: mount-ing...' . "\n";
 (system($mount_command) == 0) or die ("mount failed ($?)");
 
-print 'debootstrap-ing...' . "\n";
+print 'CREATOR: debootstrap-ing...' . "\n";
 (system($debootstrap_command) == 0) or die ("debootstrap failed ($?)");
 
-print 'umount-ing...' . "\n";
+print 'CREATOR: umount-ing...' . "\n";
 (system($umount_command) == 0) or die ("umount failed ($?)");
   
-print 'rmdir-ing...' . "\n";
+print 'CREATOR: rmdir-ing...' . "\n";
 (system($rmdir_command) == 0) or die ("rmdir failed ($?)");
 
-print 'ulosetup-ing...' . "\n";
+print 'CREATOR: ulosetup-ing...' . "\n";
 (system($ulosetup_command) == 0) or die ("ulosetup failed ($?)");
 
 foreach (@copy_command) {
-  print 'copy-ing...' . "\n";
+  print 'CREATOR: copy-ing...' . "\n";
   (system($_) == 0) or die ("copy failed ($?)");
 }  
 
-#?!?!?!? Do we need to edit any files ?!?!?!?!?!
 
