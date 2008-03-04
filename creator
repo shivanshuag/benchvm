@@ -34,6 +34,8 @@ my $location = './';
 my $uuid = 'test';
 my $dev_device = 0;
 my $clean = 0;
+my $swap_size_mb = 128;
+my $free_size_mb = 128;
 
 #Debootstrap Options
 my $arch = 0;
@@ -43,17 +45,13 @@ my $mirror = 0;
 
 
 #DD Config Options
-my $dd_bs = 1024;
-my $dd_count = 1;
-my $dd_seek = 1;
+my $dd_bs = 1024*1024;
 
-GetOptions ('c|count=i' =>\$count,
-            'a|arch=s' => \$arch,
+GetOptions ('a|arch=s' => \$arch,
             'd|distro=s' => \$distro,
             'l|location=s' => \$location,
             'm|mirror=s' => \$mirror,
             'ddbs=i' => \$dd_bs,
-            's|ddseek=i' => \$dd_seek,
             'h|help' => \$help,
             'v' => \$verbose,
             'clean' => \$clean);
@@ -64,7 +62,7 @@ if($help || ($#ARGV+1) != 1){
   print "  -c [count], --count [count]\t\t\tNumber of IMGs to Create\n";
   print "  -a [arch], --arch [arch]\t\t\tArchitecture to Install\n";
   print "  -d [distro], --distro [distro]\t\tDistro to Install\n";
-  print "  -l [location], --location [location]\t\tLocation to Create IMGs at\n";
+  print "  -l [location], --location [location]\t\tLocation to Create IMGs\n";
   print "  -m [mirror], --mirror [mirror]\t\tMirror to Intall from\n";
   print "  --ddbs [size]\t\t\t\t\tBS for DD command\n";
   print "  --ddcount [count]\t\t\t\tCount for DD command\n";
@@ -116,6 +114,7 @@ sub ex_quiet {
       log_fatal("ERROR: Return Code $?\n");
     }
   }
+  chomp($ret);
   return $ret;
 }
 
@@ -134,14 +133,18 @@ sub ex_verbose {
 }
 
 sub clean_env() {
-  ex_quiet('rm -rf ' . $dbs_dir, "[CLEAN] Removing Temporary Deboostrap Directory", 1);
+#  ex_quiet('rm -rf ' . $dbs_dir,
+#           "[CLEAN] Removing Temporary Deboostrap Directory", 1);
   ex_quiet('umount ' . $mount_dir, "[CLEAN] Unmounting Temporary Directory", 1);
-  ex_quiet('rmdir ' . $mount_dir, "[CLEAN] Removing Temporary Directory", 1);
   if($dev_device) {
-    ex_quiet('losetup -d ' . $dev_device, "[CLEAN] Removing Loopback Device", 1);
+    ex_quiet('kpartx -dv ' . $dev_device,
+             "[CLEAN] Removing Partition Device Mappings");
+    ex_quiet('losetup -d ' . $dev_device,
+             "[CLEAN] Removing Loopback Device", 1);
   } else {
     log_info("[CLEAN] Could not find dev device for losetup -d");
   }
+  ex_quiet('rmdir ' . $mount_dir, "[CLEAN] Removing Temporary Directory", 1);
 }
 
 sub mkdebootstrapcommand {
@@ -168,20 +171,40 @@ if($clean) {
   exit(0);
 }
 
-ex_quiet('mkdir -p ' . $dbs_dir, "Creating Temporary Debootstrap Directory");
-ex_verbose(mkdebootstrapcommand(), "Creating base guest filesystem");
 
+#ex_quiet('mkdir -p ' . $dbs_dir, "Creating Temporary Debootstrap Directory");
+#ex_verbose(mkdebootstrapcommand(), "Creating base guest filesystem");
+my $image_base_size_b = ex_quiet("du -s -b " . $dbs_dir . " | awk '{print \$1}'",
+                                 "Getting base image size");
+log_info('INFO: Base image size is: ' . $image_base_size_b);
+
+my $image_size_b = $image_base_size_b + ($swap_size_mb*1024*1024) + 
+                   ($free_size_mb*1024*1024);
+log_info('INFO: Final image size will be: ' . $image_size_b);
 ex_quiet('dd if=/dev/zero of=' . $location . $img_name . ' ' . 'bs=' . 
-         $dd_bs . 'K count=' . $dd_count . ' seek=' . $dd_seek,
+         $dd_bs . ' count=' . int($image_size_b/$dd_bs),
          "Creating image file");
 $dev_device = ex_quiet('losetup -f', "Getting Free Loopback Device");
-chomp($dev_device);
+log_info('INFO: Found free loopback device: ' . $dev_device);
 ex_quiet('losetup ' . $dev_device . ' ' . $location . $img_name,
          "Creating Loopback Block Device");
-ex_quiet('mkfs.ext3 ' . $dev_device, "Creating Loopback Block Device");
-
+ex_quiet('parted --script ' . $dev_device . ' mklabel msdos',
+         "Making Partition Label");
+ex_quiet('parted --script ' . $dev_device . ' mkpart primary linux-swap 0 ' .
+         $swap_size_mb,
+         "Making Swap Partition");
+ex_quiet('parted --script ' . $dev_device . ' mkpart primary ext2 ' .
+         $swap_size_mb . ' ' . ($image_size_b/1024/1024),
+         "Making Root Partition");
+ex_quiet('kpartx -av ' . $dev_device, "Creating Partition Device Mappings");
+my $dev_device_num = $dev_device;
+$dev_device_num =~ s/.*\/loop//g;
+my $dev_partition = '/dev/mapper/loop' . $dev_device_num;
+ex_quiet('mkswap ' . $dev_partition . 'p0', "Formatting Swap Partition");
+ex_quiet('mkfs.ext3 ' . $dev_partition . 'p1', "Formatting Root Partition");
 ex_quiet('mkdir -p ' . $mount_dir, "Creating Temporary Mount Directory");
-ex_quiet('mount ' . $dev_device . ' ' . $mount_dir, "Mounting Loopback Device");
+ex_quiet('mount ' . $dev_partition . 'p1 ' . $mount_dir,
+         "Mounting Loopback Device");
 
 
 
