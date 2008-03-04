@@ -59,14 +59,11 @@ GetOptions ('a|arch=s' => \$arch,
 # Display help
 if($help || ($#ARGV+1) != 1){
   print 'Usage: [options] imagename' . "\n";
-  print "  -c [count], --count [count]\t\t\tNumber of IMGs to Create\n";
   print "  -a [arch], --arch [arch]\t\t\tArchitecture to Install\n";
   print "  -d [distro], --distro [distro]\t\tDistro to Install\n";
   print "  -l [location], --location [location]\t\tLocation to Create IMGs\n";
   print "  -m [mirror], --mirror [mirror]\t\tMirror to Intall from\n";
   print "  --ddbs [size]\t\t\t\t\tBS for DD command\n";
-  print "  --ddcount [count]\t\t\t\tCount for DD command\n";
-  print "  -s [count], --ddseek [count]\t\t\tSeek for DD command\n";
   print "  --clean\t\t\t\tclean old image build\n";
   print "  -v\t\t\t\tverbose\n";
   print "  -h --help\t\t\t\t\tThis.\n";
@@ -174,12 +171,12 @@ if($clean) {
 
 #ex_quiet('mkdir -p ' . $dbs_dir, "Creating Temporary Debootstrap Directory");
 #ex_verbose(mkdebootstrapcommand(), "Creating base guest filesystem");
-my $image_base_size_b = ex_quiet("du -s -b " . $dbs_dir . " | awk '{print \$1}'",
-                                 "Getting base image size");
+my $image_base_size_b = ex_quiet("du -s -b " . $dbs_dir, "Getting base image size");
+$image_base_size_b =~ s/\s.*//g;
 log_info('INFO: Base image size is: ' . $image_base_size_b);
 
-my $image_size_b = $image_base_size_b + ($swap_size_mb*1024*1024) + 
-                   ($free_size_mb*1024*1024);
+my $image_size_b = int($image_base_size_b) + (int($swap_size_mb)*1024*1024) + 
+                   (int($free_size_mb)*1024*1024);
 log_info('INFO: Final image size will be: ' . $image_size_b);
 ex_quiet('dd if=/dev/zero of=' . $location . $img_name . ' ' . 'bs=' . 
          $dd_bs . ' count=' . int($image_size_b/$dd_bs),
@@ -200,12 +197,40 @@ ex_quiet('kpartx -av ' . $dev_device, "Creating Partition Device Mappings");
 my $dev_device_num = $dev_device;
 $dev_device_num =~ s/.*\/loop//g;
 my $dev_partition = '/dev/mapper/loop' . $dev_device_num;
+
 ex_quiet('mkswap ' . $dev_partition . 'p1', "Formatting Swap Partition");
 ex_quiet('mkfs.ext3 ' . $dev_partition . 'p2', "Formatting Root Partition");
+
+my $uuid_swap = ex_quiet('blkid -s UUID ' . $dev_partition . 'p1', "Obtaining swap UUID");
+$uuid_swap =~ s/.*UUID="//g;
+$uuid_swap =~ s/"//g;
+log_info('INFO: Found swap UUID: ' . $uuid_swap);
+
+my $uuid_root = ex_quiet('blkid -s UUID ' . $dev_partition . 'p2', "Obtaining root UUID");
+$uuid_root =~ s/.*UUID="//g;
+$uuid_root =~ s/"//g;
+log_info('INFO: Found root UUID: ' . $uuid_root);
+
 ex_quiet('mkdir -p ' . $mount_dir, "Creating Temporary Mount Directory");
 ex_quiet('mount ' . $dev_partition . 'p2 ' . $mount_dir,
          "Mounting Loopback Device");
 
-
+# Zach, todo:
+# 1) Modify the image filesystem /w needed stuff including:
+#  - /etc/network/interfaces with a lo, and eth0 on dhcp
+#  - set hostname what have you etc... (It will be the same on all the images)
+#  - use the uuid's obtained above to set /etc/fstab correctly
+#  - set the root password to some garbage? (I think deboostrap defaults it to
+#  no password)
+#  - Create a user we will use, install the ssh key
+#  - setup /boot correctly (grub menu.lst)
+# 2) copy the filesystem $dbs_dir into the mounted directory $mount_dir (see
+# movefilesystem.sh on righteous? animal?) [it uses a tar one liner to preserve
+# permissions]
+# 3) use grub --batch to install grub to the block device (/dev/loop#)
+# this is pretty simple:
+# http://www.gentoo.org/doc/en/handbook/handbook-x86.xml?part=1&chap=10#doc_chap2
+# see code listing 2.8.
+# 4) Do everything I forgot to mention here. gl.
 
 clean_env();
