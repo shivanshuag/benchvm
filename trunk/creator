@@ -138,7 +138,7 @@ sub clean_env() {
   ex_quiet('umount ' . $mount_dir, "[CLEAN] Unmounting Temporary Directory", 1);
   if($dev_device) {
     ex_quiet('kpartx -dv ' . $dev_device,
-             "[CLEAN] Removing Partition Device Mappings");
+             "[CLEAN] Removing Partition Device Mappings", 1);
     ex_quiet('losetup -d ' . $dev_device,
              "[CLEAN] Removing Loopback Device", 1);
   } else {
@@ -184,26 +184,26 @@ log_info('INFO: Final image size will be: ' . $image_size_b);
 ex_quiet('dd if=/dev/zero of=' . $location . $img_name . ' ' . 'bs=' . 
          $dd_bs . ' count=' . int($image_size_b/$dd_bs),
          "Creating image file");
+ex_quiet('parted --script ' . $location . $img_name . ' mklabel msdos',
+         "Making Partition Label");
+ex_quiet('parted --script ' . $location . $img_name . ' mkpart primary linux-swap 0 ' .
+         $swap_size_mb,
+         "Making Swap Partition");
+ex_quiet('parted --script ' . $location . $img_name . ' mkpart primary ext2 ' .
+         $swap_size_mb . ' ' . ($image_size_b/1024/1024),
+         "Making Root Partition");
 $dev_device = ex_quiet('losetup -f', "Getting Free Loopback Device");
 log_info('INFO: Found free loopback device: ' . $dev_device);
 ex_quiet('losetup ' . $dev_device . ' ' . $location . $img_name,
          "Creating Loopback Block Device");
-ex_quiet('parted --script ' . $dev_device . ' mklabel msdos',
-         "Making Partition Label");
-ex_quiet('parted --script ' . $dev_device . ' mkpart primary linux-swap 0 ' .
-         $swap_size_mb,
-         "Making Swap Partition");
-ex_quiet('parted --script ' . $dev_device . ' mkpart primary ext2 ' .
-         $swap_size_mb . ' ' . ($image_size_b/1024/1024),
-         "Making Root Partition");
 ex_quiet('kpartx -av ' . $dev_device, "Creating Partition Device Mappings");
 my $dev_device_num = $dev_device;
 $dev_device_num =~ s/.*\/loop//g;
 my $dev_partition = '/dev/mapper/loop' . $dev_device_num;
-ex_quiet('mkswap ' . $dev_partition . 'p0', "Formatting Swap Partition");
-ex_quiet('mkfs.ext3 ' . $dev_partition . 'p1', "Formatting Root Partition");
+ex_quiet('mkswap ' . $dev_partition . 'p1', "Formatting Swap Partition");
+ex_quiet('mkfs.ext3 ' . $dev_partition . 'p2', "Formatting Root Partition");
 ex_quiet('mkdir -p ' . $mount_dir, "Creating Temporary Mount Directory");
-ex_quiet('mount ' . $dev_partition . 'p1 ' . $mount_dir,
+ex_quiet('mount ' . $dev_partition . 'p2 ' . $mount_dir,
          "Mounting Loopback Device");
 
 
