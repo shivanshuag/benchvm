@@ -111,7 +111,7 @@ sub write_rclocal {
   print RCLOCAL "hostname -F /etc/hostname\n";
   print RCLOCAL "echo \"127.0.0.1 localhost\" > /etc/hosts\n";
   print RCLOCAL "echo \"127.0.1.1 benchvm\${DEC}\" >> /etc/hosts\n";
-  print RCLOCAL "/etc/init.d/networking/restart\n";
+  print RCLOCAL "/etc/init.d/networking restart\n";
   print RCLOCAL "exit 0\n";
   close RCLOCAL;
 }
