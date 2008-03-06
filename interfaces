@@ -1,0 +1,16 @@
+#!/bin/bash
+OUTFILE=./test-interfaces
+BASEIP=10.11.12
+MAC=`ifconfig eth0 | grep HWaddr | sed 's/.*HWaddr //g'`
+echo Found eth0 MAC $MAC
+let DEC=0x`echo $MAC | sed 's/..:..:..:..:..://'`
+echo Using Last IP octet: $DEC
+
+echo "auto lo" > $OUTFILE
+echo "iface lo inet loopback" >> $OUTFILE
+echo "auto eth0" >> $OUTFILE
+echo "iface eth0 inet static" >> $OUTFILE
+echo "  address ${BASEIP}.${DEC}" >> $OUTFILE
+echo "  netmask 255.255.255.0" >> $OUTFILE
+echo "  broadcast ${BASEIP}.0" >> $OUTFILE
+
