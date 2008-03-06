@@ -192,7 +192,7 @@ sub mkdebootstrapcommand {
 }
 
 sub sshkeygen {
-  if (-e "~/.ssh/id_rsa.pub") {
+  if (-e "/root/.ssh/id_rsa.pub") {
     log_info("Found old ssh key, skipping keygen");
   } else {
     ex_quiet('ssh-keygen -t rsa -q -f ~/.ssh/id_rsa -N benchvm',
@@ -254,23 +254,23 @@ $uuid_root =~ s/"//g;
 log_info('INFO: Found root UUID: ' . $uuid_root);
 
 log_info('TASK: Attempting to write guest\'s /etc/fstab');
-write_fstab($location . $dbs_dir . '/etc/fstab', $uuid_root, $uuid_swap);
-ex_quiet('echo vmbench> ' . $location . $dbs_dir . '/etc/hostname', 
+write_fstab($dbs_dir . '/etc/fstab', $uuid_root, $uuid_swap);
+ex_quiet('echo vmbench> ' . $dbs_dir . '/etc/hostname', 
          "Setting Guest Hostname");
 log_info('TASK: Attempting to write guest\'s /etc/rc.local');
-write_rclocal($location . $dbs_dir . '/etc/rc.local');
-ex_quiet('chroot ' . $location . $dbs_dir . 'useradd -m benchvm', 
+write_rclocal($dbs_dir . '/etc/rc.local');
+ex_quiet('chroot ' . $dbs_dir . ' useradd -m benchvm', 
          "Creating User benchvm");
-ex_quiet('chroot ' . $location . $dbs_dir . 'mkdir ~benchvm/.ssh && ', 
+ex_quiet('chroot ' . $dbs_dir . ' mkdir ~benchvm/.ssh && ', 
          "Creating benchvm .ssh dir");
-ex_quiet('cat ~/.ssh/id_rsa.pub > ' . $location . $dbs_dir .
+ex_quiet('cat ~/.ssh/id_rsa.pub > ' . $dbs_dir .
          '/home/benchvm/.ssh/authorized_keys', 
          "Copying ssh keys");
-ex_quiet('chroot ' . $dbs_dir . 'chown -R benchvm ~benchvm/.ssh', 
+ex_quiet('chroot ' . $dbs_dir . ' chown -R benchvm ~benchvm/.ssh', 
          "Setting .ssh owner");
-ex_quiet('chroot ' . $dbs_dir . 'chgrp -R benchvm ~benchvm/.ssh', 
+ex_quiet('chroot ' . $dbs_dir . ' chgrp -R benchvm ~benchvm/.ssh', 
          "Setting .ssh group");
-ex_quiet('chroot ' . $dbs_dir . 'chmod -R 700 ~benchvm/.ssh', 
+ex_quiet('chroot ' . $dbs_dir . ' chmod -R 700 ~benchvm/.ssh', 
          "Setting .ssh permissions");
 
 
