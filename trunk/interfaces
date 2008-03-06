@@ -14,3 +14,8 @@ echo "  address ${BASEIP}.${DEC}" >> $OUTFILE
 echo "  netmask 255.255.255.0" >> $OUTFILE
 echo "  broadcast ${BASEIP}.0" >> $OUTFILE
 
+#echo vmbench-${DEC} > /etc/hostname
+#hostname vmbench-${DEC}
+
+#echo "127.0.0.1 localhost" > /etc/hosts
+#echo "127.0.1.1 vmbench-${DEC}" /etc/hosts
