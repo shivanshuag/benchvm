@@ -27,6 +27,7 @@ if($user ne 'root'){
 #################
 
 #General
+my $provision = 0;
 my $verbose = 0;
 my $help;
 my $count = 4;
@@ -54,6 +55,7 @@ GetOptions ('a|arch=s' => \$arch,
             'ddbs=i' => \$dd_bs,
             'h|help' => \$help,
             'v' => \$verbose,
+            'p|provision' => \$provision,
             'clean' => \$clean);
 
 # Display help
@@ -71,7 +73,7 @@ if($help || ($#ARGV+1) != 1){
 }
 #Parse Command Line vars after options
 $uuid = $ARGV[0];
-my $img_name = $uuid . '.img';
+my $img_name = $uuid . '-pristine.img';
 my $mount_dir = $location . 'mnt-' . $uuid;
 my $dbs_dir = $location . 'tmp-' . $uuid;
 
@@ -79,43 +81,57 @@ my $dbs_dir = $location . 'tmp-' . $uuid;
 #  Subroutines  #
 #################
 
+#Log File
 my $logfilename="creator.log.$uuid";
 open(LOGFILE, ">$logfilename") or die("Unable to open logfile: $logfilename");
 
+#Log to stdout & logfile, don't quit
 sub log_info {
   print LOGFILE "$_[0]\n";
   print "$_[0]\n";
 }
 
+#Log to stdout & logfile, then die
 sub log_fatal {
   print LOGFILE "$_[0]\n";
   print "$_[0]\n";
   clean_env();
-  exit(1);
+  exit(1); #Epic fail.
 }
 
+#Write an rc.local file for our guest filesystem
 sub write_rclocal {
   my($rclocal) = @_;
+  my $base_ip='192.168.133';
   open (RCLOCAL, ">$rclocal") or log_fatal("Unable to open guest /etc/rc.local");
   print RCLOCAL "#!/bin/bash\n";
-  print RCLOCAL "BASEIP=10.11.12\n";
-  print RCLOCAL "let DEC=0x`ifconfig eth0 | grep HWaddr | sed 's/.*HWaddr //g' | sed 's/..:..:..:..:..://'`\n";
+  print RCLOCAL "BASEIP=$base_ip\n";
+  #Get the last two hex digits of our MAC, convert to decimal. 
+  print RCLOCAL "let DEC=0x`ifconfig eth0 | grep HWaddr | sed 's/.*..:..:..:..:..://'`\n";
+  #Set /etc/network/interfaces with a static IP
   print RCLOCAL "echo \"auto lo\"> /etc/network/interfaces\n";
   print RCLOCAL "echo \"iface lo inet loopback\">> /etc/network/interfaces\n";
   print RCLOCAL "echo \"auto eth0\">> /etc/network/interfaces\n";
   print RCLOCAL "echo \"iface eth0 inet static\">> /etc/network/interfaces\n";
+  #Use the decimal value we calculated earlier here.
   print RCLOCAL "echo \"  address \${BASEIP}.\${DEC}\">> /etc/network/interfaces\n";
   print RCLOCAL "echo \"  netmask 255.255.255.0\">> /etc/network/interfaces\n";
   print RCLOCAL "echo \"  broadcast \${BASEIP}.0\">> /etc/network/interfaces\n";
+  #Set a hostname
   print RCLOCAL "echo \"benchvm\${DEC}\" > /etc/hostname\n";
   print RCLOCAL "hostname -F /etc/hostname\n";
+  #Set /etc/hosts
   print RCLOCAL "echo \"127.0.0.1 localhost\" > /etc/hosts\n";
   print RCLOCAL "echo \"127.0.1.1 benchvm\${DEC}\" >> /etc/hosts\n";
+  #Restart network, ssh, apache
   print RCLOCAL "/etc/init.d/networking restart\n";
+  print RCLOCAL "/etc/init.d/ssh restart\n";
+  print RCLOCAL "/etc/init.d/apache2 restart\n";
   print RCLOCAL "exit 0\n";
   close RCLOCAL;
 }
 
+#Use the volume UUIDs for the image to set /etc/fstab on the guest filesystem
 sub write_fstab {
   my($fstab, $root_uuid, $swap_uuid) = @_;
   open (FSTAB, ">$fstab") or log_fatal("Unable to open guest /etc/fstab");
@@ -125,10 +141,14 @@ sub write_fstab {
   close FSTAB;
 }
 
+#Run a shell command
+#Will not log std out/err unless return code != 0
+#Returns the contents of std out/err
+#Will die on return code != 0, unless flag $do_not_die is set
 sub ex_quiet {
-  my($command,$name,$do_not_fatal) = @_;
+  my($command,$description,$do_not_die) = @_;
   if ($name) {
-    log_info("TASK: $name");
+    log_info("TASK: $description");
   }
   if ($verbose) {
     log_info("COMMAND: $command");
@@ -136,7 +156,7 @@ sub ex_quiet {
   my $ret = `$command 2>&1`;
   if ($? != 0) {
     log_info("OUTPUT: $ret\n");
-    if ($do_not_fatal) {
+    if ($do_not_die) {
       log_info("ERROR: Return Code $?\n");
     } else {
       log_fatal("ERROR: Return Code $?\n");
@@ -146,10 +166,13 @@ sub ex_quiet {
   return $ret;
 }
 
+# Run a shell command
+# std out/err go to this processes std out/err
+# Logs on failure.
 sub ex_verbose {
-  my($command,$name) = @_;
-  if ($name) {
-    log_info("TASK: $name");
+  my($command,$description) = @_;
+  if ($description) {
+    log_info("TASK: $description");
   }
   if ($verbose) { 
     log_info("COMMAND: $command");
@@ -160,6 +183,7 @@ sub ex_verbose {
   }
 }
 
+# Clean up directories, mount points etc...
 sub clean_env() {
 #  ex_quiet('rm -rf ' . $dbs_dir,
 #           "[CLEAN] Removing Temporary Deboostrap Directory", 1);
@@ -175,6 +199,7 @@ sub clean_env() {
   ex_quiet('rmdir ' . $mount_dir, "[CLEAN] Removing Temporary Directory", 1);
 }
 
+# Construct the deboostrap command we will use to create a debian filesystem
 sub mkdebootstrapcommand {
   my $debootstrapcommand = 'debootstrap ';
   $debootstrapcommand .= '--components=main,restricted,universe,multiverse ';
@@ -191,6 +216,55 @@ sub mkdebootstrapcommand {
   return $debootstrapcommand;
 }
 
+
+
+#####################
+#   Run Functions   #
+#####################
+
+sub run_create_filesystem {
+  my($dir) = @_;
+  ex_quiet('mkdir -p ' . $dir, "Creating Temporary Debootstrap Directory");
+  ex_verbose(mkdebootstrapcommand(), "Creating base guest filesystem");
+}
+
+sub run_modify_filesystem {
+  my($dir) = @_;
+  ex_quiet('echo vmbench> ' . $dir . '/etc/hostname', "Setting Guest Hostname");
+  log_info('TASK: Setting guest\'s /etc/rc.local');
+  write_rclocal($dir . '/etc/rc.local');
+  sshkeygen();
+  if(!(-e $dir  . '/root/.ssh')) {
+    ex_quiet('mkdir ' . $dir  . '/root/.ssh', "Creating .ssh dir");
+  }
+  ex_quiet('cp ~/.ssh/id_rsa.pub ' . $dir .
+           '/root/.ssh/authorized_keys', 
+           "Copying ssh key");
+  ex_quiet('chmod -R 700 ' . $dir . '/root/.ssh', "Setting ~/.ssh permissions");
+}
+
+sub run_create_image_file {
+  my($img_file, $fs_dir) = @_;
+  my $image_base_size_b = ex_quiet("du -s -b " . $fs_dir, "Getting base image size");
+  $image_base_size_b =~ s/\s.*//g;
+  log_info('INFO: Base image size is: ' . ($image_base_size_b/1024/1024) . 'MB');
+  my $image_size_b = int($image_base_size_b) + (int($swap_size_mb)*1024*1024) + 
+                     (int($free_size_mb)*1024*1024);
+  log_info('INFO: Final image size will be: ' . ($image_size_b/1024/1024) . 'MB');
+  ex_quiet('dd if=/dev/zero of=' . $img_file . ' ' . 'bs=' . 
+           $dd_bs . ' count=' . int($image_size_b/$dd_bs),
+           "Creating image file");
+  ex_quiet('parted --script ' . $img_file . ' mklabel msdos',
+           "Making Partition Label");
+  ex_quiet('parted --script ' . $img_file . ' mkpart primary linux-swap 0 ' .
+           $swap_size_mb,
+           "Making Swap Partition");
+  ex_quiet('parted --script ' . $img_file . ' mkpart primary ext2 ' .
+           $swap_size_mb . ' ' . ($image_size_b/1024/1024),
+           "Making Root Partition");
+}
+
+# Create ssh key if nessicary
 sub sshkeygen {
   if (-e "/root/.ssh/id_rsa.pub") {
     log_info("Found old ssh key, skipping keygen");
@@ -209,52 +283,30 @@ if($clean) {
   exit(0);
 }
 
-
-
 if (-e $dbs_dir) {
   log_info("INFO: Found old Debootstrap Directory, skipping debootstrap");
 } else {
-  ex_quiet('mkdir -p ' . $dbs_dir, "Creating Temporary Debootstrap Directory");
-  ex_verbose(mkdebootstrapcommand(), "Creating base guest filesystem");
+  run_create_filesystem($dbs_dir);
 }
-ex_quiet('echo vmbench> ' . $dbs_dir . '/etc/hostname', "Setting Guest Hostname");
-log_info('TASK: Setting guest\'s /etc/rc.local');
-write_rclocal($dbs_dir . '/etc/rc.local');
-sshkeygen();
-if(!(-e $dbs_dir  . '/root/.ssh')) {
-  ex_quiet('mkdir ' . $dbs_dir  . '/root/.ssh', "Creating .ssh dir");
+run_modify_filesystem($dbs_dir);
+
+
+
+run_create_image_file($location . $img_name, $dbs_dir);
+
+my $dev_root_partition;
+my $dev_swap_partition;
+sub run_mount_image {
+  my($img_file)=@_;
+  $dev_device = ex_quiet('losetup -f', "Getting Free Loopback Device");
+  log_info('INFO: Found free loopback device: ' . $dev_device);
+  ex_quiet('losetup ' . $dev_device . ' ' . $location . $img_name,
+           "Creating Loopback Block Device");
+  ex_quiet('kpartx -av ' . $dev_device, "Creating Partition Device Mappings");
+  my $dev_device_num = $dev_device;
+  $dev_device_num =~ s/.*\/loop//g;
+  $dev_partition = '/dev/mapper/loop' . $dev_device_num;
 }
-ex_quiet('cp ~/.ssh/id_rsa.pub ' . $dbs_dir .
-         '/root/.ssh/authorized_keys', 
-         "Copying ssh key");
-ex_quiet('chmod -R 700 ' . $dbs_dir . '/root/.ssh', "Setting ~/.ssh permissions");
-my $image_base_size_b = ex_quiet("du -s -b " . $dbs_dir, "Getting base image size");
-$image_base_size_b =~ s/\s.*//g;
-log_info('INFO: Base image size is: ' . $image_base_size_b);
-
-my $image_size_b = int($image_base_size_b) + (int($swap_size_mb)*1024*1024) + 
-                   (int($free_size_mb)*1024*1024);
-log_info('INFO: Final image size will be: ' . $image_size_b);
-ex_quiet('dd if=/dev/zero of=' . $location . $img_name . ' ' . 'bs=' . 
-         $dd_bs . ' count=' . int($image_size_b/$dd_bs),
-         "Creating image file");
-ex_quiet('parted --script ' . $location . $img_name . ' mklabel msdos',
-         "Making Partition Label");
-ex_quiet('parted --script ' . $location . $img_name . ' mkpart primary linux-swap 0 ' .
-         $swap_size_mb,
-         "Making Swap Partition");
-ex_quiet('parted --script ' . $location . $img_name . ' mkpart primary ext2 ' .
-         $swap_size_mb . ' ' . ($image_size_b/1024/1024),
-         "Making Root Partition");
-$dev_device = ex_quiet('losetup -f', "Getting Free Loopback Device");
-log_info('INFO: Found free loopback device: ' . $dev_device);
-ex_quiet('losetup ' . $dev_device . ' ' . $location . $img_name,
-         "Creating Loopback Block Device");
-ex_quiet('kpartx -av ' . $dev_device, "Creating Partition Device Mappings");
-my $dev_device_num = $dev_device;
-$dev_device_num =~ s/.*\/loop//g;
-my $dev_partition = '/dev/mapper/loop' . $dev_device_num;
-
 ex_quiet('mkswap ' . $dev_partition . 'p1', "Formatting Swap Partition");
 ex_quiet('mkfs.ext3 ' . $dev_partition . 'p2', "Formatting Root Partition");
 
