@@ -195,7 +195,7 @@ sub sshkeygen {
   if (-e "/root/.ssh/id_rsa.pub") {
     log_info("Found old ssh key, skipping keygen");
   } else {
-    ex_quiet('ssh-keygen -t rsa -q -f ~/.ssh/id_rsa -N benchvm',
+    ex_quiet('ssh-keygen -t rsa -q -f ~/.ssh/id_rsa -N \'\'',
              "Generating SSH keys");
   }
 }
@@ -210,9 +210,24 @@ if($clean) {
 }
 
 
+
+if (-e $dbs_dir) {
+  log_info("INFO: Found old Debootstrap Directory, skipping debootstrap");
+} else {
+  ex_quiet('mkdir -p ' . $dbs_dir, "Creating Temporary Debootstrap Directory");
+  ex_verbose(mkdebootstrapcommand(), "Creating base guest filesystem");
+}
+ex_quiet('echo vmbench> ' . $dbs_dir . '/etc/hostname', "Setting Guest Hostname");
+log_info('TASK: Setting guest\'s /etc/rc.local');
+write_rclocal($dbs_dir . '/etc/rc.local');
 sshkeygen();
-ex_quiet('mkdir -p ' . $dbs_dir, "Creating Temporary Debootstrap Directory");
-ex_verbose(mkdebootstrapcommand(), "Creating base guest filesystem");
+if(!(-e $dbs_dir  . '/root/.ssh')) {
+  ex_quiet('mkdir ' . $dbs_dir  . '/root/.ssh', "Creating .ssh dir");
+}
+ex_quiet('cp ~/.ssh/id_rsa.pub ' . $dbs_dir .
+         '/root/.ssh/authorized_keys', 
+         "Copying ssh key");
+ex_quiet('chmod -R 700 ' . $dbs_dir . '/root/.ssh', "Setting ~/.ssh permissions");
 my $image_base_size_b = ex_quiet("du -s -b " . $dbs_dir, "Getting base image size");
 $image_base_size_b =~ s/\s.*//g;
 log_info('INFO: Base image size is: ' . $image_base_size_b);
@@ -253,26 +268,8 @@ $uuid_root =~ s/.*UUID="//g;
 $uuid_root =~ s/"//g;
 log_info('INFO: Found root UUID: ' . $uuid_root);
 
-log_info('TASK: Attempting to write guest\'s /etc/fstab');
+log_info('TASK: Setting guest\'s /etc/fstab');
 write_fstab($dbs_dir . '/etc/fstab', $uuid_root, $uuid_swap);
-ex_quiet('echo vmbench> ' . $dbs_dir . '/etc/hostname', 
-         "Setting Guest Hostname");
-log_info('TASK: Attempting to write guest\'s /etc/rc.local');
-write_rclocal($dbs_dir . '/etc/rc.local');
-ex_quiet('chroot ' . $dbs_dir . ' useradd -m benchvm', 
-         "Creating User benchvm");
-ex_quiet('chroot ' . $dbs_dir . ' mkdir /home/benchvm/.ssh', 
-         "Creating benchvm .ssh dir");
-ex_quiet('cat ~/.ssh/id_rsa.pub > ' . $dbs_dir .
-         '/home/benchvm/.ssh/authorized_keys', 
-         "Copying ssh keys");
-ex_quiet('chroot ' . $dbs_dir . ' chown -R benchvm /home/benchvm/.ssh', 
-         "Setting .ssh owner");
-ex_quiet('chroot ' . $dbs_dir . ' chgrp -R benchvm /home/benchvm/.ssh', 
-         "Setting .ssh group");
-ex_quiet('chroot ' . $dbs_dir . ' chmod -R 700 /home/benchvm/.ssh', 
-         "Setting .ssh permissions");
-
 
 ex_quiet('mkdir -p ' . $mount_dir, "Creating Temporary Mount Directory");
 ex_quiet('mount ' . $dev_partition . 'p2 ' . $mount_dir,

@@ -1,21 +1,43 @@
-#!/bin/bash
-OUTFILE=./test-interfaces
-BASEIP=10.11.12
-MAC=`ifconfig eth0 | grep HWaddr | sed 's/.*HWaddr //g'`
-echo Found eth0 MAC $MAC
-let DEC=0x`echo $MAC | sed 's/..:..:..:..:..://'`
-echo Using Last IP octet: $DEC
+auto lo
+iface lo inet loopback
 
-echo "auto lo" > $OUTFILE
-echo "iface lo inet loopback" >> $OUTFILE
-echo "auto eth0" >> $OUTFILE
-echo "iface eth0 inet static" >> $OUTFILE
-echo "  address ${BASEIP}.${DEC}" >> $OUTFILE
-echo "  netmask 255.255.255.0" >> $OUTFILE
-echo "  broadcast ${BASEIP}.0" >> $OUTFILE
+#auto eth0
+#iface eth0 inet dhcp
 
-#echo vmbench-${DEC} > /etc/hostname
-#hostname vmbench-${DEC}
 
-#echo "127.0.0.1 localhost" > /etc/hosts
-#echo "127.0.1.1 vmbench-${DEC}" /etc/hosts
+auto br0
+iface br0 inet static
+address 192.168.17.205
+network 192.168.17.0
+netmask 255.255.255.0
+broadcast 192.168.17.255
+gateway 192.168.17.1
+bridge_ports eth0
+bridge_fd 9
+bridge_hello 2
+bridge_maxage 12
+bridge_stp off
+
+
+#iface eth0 inet static
+#address 10.11.12.1
+#netmask 255.255.255.0
+#broadcast 128.153.145.0
+
+#address 10.0.1.240
+#netmask 255.255.255.0
+#gateway 10.0.1.1
+#iface eth0 inet static
+# address 10.0.1.240
+# netmask 255.255.255.0
+# broadcast 10.0.1.255
+
+#auto usb0
+#iface usb0 inet static
+# address 192.168.0.90
+# gateway 192.168.0.1
+# netmask 255.255.255.0
+# broadcast 192.168.0.255
+
+#auto ath0
+#iface ath0 inet dhcp
