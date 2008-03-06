@@ -148,7 +148,7 @@ sub write_fstab {
 #Will die on return code != 0, unless flag $do_not_die is set
 sub ex_quiet {
   my($command,$description,$do_not_die) = @_;
-  if ($name) {
+  if ($description) {
     log_info("TASK: $description");
   }
   if ($verbose) {
@@ -192,13 +192,12 @@ sub clean_env() {
     ex_quiet('umount ' . $mount_dir, "[CLEAN] Unmounting Temporary Directory", 1);
   }
   if($dev_device) {
-      ex_quiet('kpartx -dv ' . $dev_device,
-               "[CLEAN] Removing Partition Device Mappings", 1);
-      ex_quiet('losetup -d ' . $dev_device,
-               "[CLEAN] Removing Loopback Device", 1);
-    } else {
-      log_info("[CLEAN] Could not find dev device for losetup -d");
-    }
+    ex_quiet('kpartx -dv ' . $dev_device,
+             "[CLEAN] Removing Partition Device Mappings", 1);
+    ex_quiet('losetup -d ' . $dev_device,
+             "[CLEAN] Removing Loopback Device", 1);
+  } else {
+    log_info("[CLEAN] Could not find dev device for losetup -d");
   }
   if (-e $mount_dir) {
     ex_quiet('rmdir ' . $mount_dir, "[CLEAN] Removing Temporary Directory", 1);
@@ -298,8 +297,8 @@ sub run_map_image {
 
 # Format the partitions
 sub run_format_image {
-  ex_quiet('mkswap ' . $dev_swap_partition . 'p1', "Formatting Swap Partition");
-  ex_quiet('mkfs.ext3 ' . $dev_root_partition . 'p2', "Formatting Root Partition");
+  ex_quiet('mkswap ' . $dev_swap_partition, "Formatting Swap Partition");
+  ex_quiet('mkfs.ext3 ' . $dev_root_partition, "Formatting Root Partition");
 }
 
 # Get the UUIDs of the mapped partitions
@@ -310,7 +309,7 @@ sub run_get_partition_uuids {
   $uuid_swap =~ s/.*UUID="//g;
   $uuid_swap =~ s/"//g;
   log_info('INFO: Found swap UUID: ' . $uuid_swap);
-  $uuid_root = ex_quiet('blkid -s UUID ' . $dev_root_partition . 'p2', "Obtaining root UUID");
+  $uuid_root = ex_quiet('blkid -s UUID ' . $dev_root_partition, "Obtaining root UUID");
   $uuid_root =~ s/.*UUID="//g;
   $uuid_root =~ s/"//g;
   log_info('INFO: Found root UUID: ' . $uuid_root);
@@ -322,13 +321,12 @@ sub run_copy_fs_to_image {
   log_info('TASK: Setting guest\'s /etc/fstab');
   write_fstab($local_root . '/etc/fstab', $uuid_root, $uuid_swap);
   ex_quiet('mkdir -p ' . $tmp_mount_dir, "Creating Temporary Mount Directory");
-  ex_quiet('mount ' . $dev_root_partition . 'p2 ' . $tmp_mount_dir,
+  ex_quiet('mount ' . $dev_root_partition . ' ' . $tmp_mount_dir,
            "Mounting Loopback Device");
   $is_mounted = 1;
   ex_verbose('(cd ' . $local_root  . ';tar lcf - .)|(cd ' .
              $tmp_mount_dir . '; tar xpvf - )',
              "Copying Filesystem to guest image");
-  }
 }
 
 ###########
@@ -349,7 +347,6 @@ if (-e $dbs_dir) {
 }
 
 run_modify_filesystem($dbs_dir);
-
 run_create_image_file($location . $img_name, $dbs_dir);
 run_map_image($location . $img_name);
 run_format_image();
