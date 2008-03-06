@@ -261,16 +261,16 @@ log_info('TASK: Attempting to write guest\'s /etc/rc.local');
 write_rclocal($dbs_dir . '/etc/rc.local');
 ex_quiet('chroot ' . $dbs_dir . ' useradd -m benchvm', 
          "Creating User benchvm");
-ex_quiet('chroot ' . $dbs_dir . ' mkdir ~benchvm/.ssh && ', 
+ex_quiet('chroot ' . $dbs_dir . ' mkdir /home/benchvm/.ssh', 
          "Creating benchvm .ssh dir");
 ex_quiet('cat ~/.ssh/id_rsa.pub > ' . $dbs_dir .
          '/home/benchvm/.ssh/authorized_keys', 
          "Copying ssh keys");
-ex_quiet('chroot ' . $dbs_dir . ' chown -R benchvm ~benchvm/.ssh', 
+ex_quiet('chroot ' . $dbs_dir . ' chown -R benchvm /home/benchvm/.ssh', 
          "Setting .ssh owner");
-ex_quiet('chroot ' . $dbs_dir . ' chgrp -R benchvm ~benchvm/.ssh', 
+ex_quiet('chroot ' . $dbs_dir . ' chgrp -R benchvm /home/benchvm/.ssh', 
          "Setting .ssh group");
-ex_quiet('chroot ' . $dbs_dir . ' chmod -R 700 ~benchvm/.ssh', 
+ex_quiet('chroot ' . $dbs_dir . ' chmod -R 700 /home/benchvm/.ssh', 
          "Setting .ssh permissions");
 
 
