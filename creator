@@ -94,6 +94,28 @@ sub log_fatal {
   exit(1);
 }
 
+sub write_rclocal {
+  my($rclocal) = @_;
+  open (RCLOCAL, ">$rclocal") or log_fatal("Unable to open guest /etc/rc.local");
+  print RCLOCAL "#!/bin/bash\n";
+  print RCLOCAL "BASEIP=10.11.12\n";
+  print RCLOCAL "let DEC=0x`ifconfig eth0 | grep HWaddr | sed 's/.*HWaddr //g' | sed 's/..:..:..:..:..://'`\n";
+  print RCLOCAL "echo \"auto lo\"> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"iface lo inet loopback\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"auto eth0\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"iface eth0 inet static\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"  address \${BASEIP}.\${DEC}\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"  netmask 255.255.255.0\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"  broadcast \${BASEIP}.0\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"benchvm\${DEC}\" > /etc/hostname\n";
+  print RCLOCAL "hostname -F /etc/hostname\n";
+  print RCLOCAL "echo \"127.0.0.1 localhost\" > /etc/hosts\n";
+  print RCLOCAL "echo \"127.0.1.1 benchvm\${DEC}\" >> /etc/hosts\n";
+  print RCLOCAL "/etc/init.d/networking/restart\n";
+  print RCLOCAL "exit 0\n";
+  close RCLOCAL;
+}
+
 sub write_fstab {
   my($fstab, $root_uuid, $swap_uuid) = @_;
   open (FSTAB, ">$fstab") or log_fatal("Unable to open guest /etc/fstab");
@@ -230,6 +252,8 @@ log_info('TASK: Attempting to write guest\'s /etc/fstab');
 write_fstab($location . $mount_dir . '/etc/fstab', $uuid_root, $uuid_swap);
 ex_quiet('echo vmbench> ' . $location . $mount_dir . '/etc/hostname', 
          "Setting Guest Hostname");
+log_info('TASK: Attempting to write guest\'s /etc/rc.local');
+write_rclocal($location . $mount_dir . '/etc/rc.local');
 
 # Zach, todo:
 # 1) Modify the image filesystem /w needed stuff including:
