@@ -38,6 +38,7 @@ my $clean = 0;
 my $swap_size_mb = 128;
 my $free_size_mb = 128;
 my $is_mounted = 0;
+my $base_ip='192.168.133';
 
 #Debootstrap Options
 my $arch = 0;
@@ -103,19 +104,19 @@ sub log_fatal {
 #Write an rc.local file for our guest filesystem
 sub write_rclocal {
   my($rclocal) = @_;
-  my $base_ip='192.168.133';
   open (RCLOCAL, ">$rclocal") or log_fatal("Unable to open guest /etc/rc.local");
   print RCLOCAL "#!/bin/bash\n";
   print RCLOCAL "BASEIP=$base_ip\n";
   #Get the last two hex digits of our MAC, convert to decimal. 
   print RCLOCAL "let DEC=0x`ifconfig eth0 | grep HWaddr | sed 's/.*..:..:..:..:..://'`\n";
+  print RCLOCAL "LASTDIGITS=\$((\$DEC+100))\n";
   #Set /etc/network/interfaces with a static IP
   print RCLOCAL "echo \"auto lo\"> /etc/network/interfaces\n";
   print RCLOCAL "echo \"iface lo inet loopback\">> /etc/network/interfaces\n";
   print RCLOCAL "echo \"auto eth0\">> /etc/network/interfaces\n";
   print RCLOCAL "echo \"iface eth0 inet static\">> /etc/network/interfaces\n";
   #Use the decimal value we calculated earlier here.
-  print RCLOCAL "echo \"  address \${BASEIP}.\${DEC}\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"  address \${BASEIP}.\${LASTDIGITS}\">> /etc/network/interfaces\n";
   print RCLOCAL "echo \"  netmask 255.255.255.0\">> /etc/network/interfaces\n";
   print RCLOCAL "echo \"  broadcast \${BASEIP}.0\">> /etc/network/interfaces\n";
   #Set a hostname

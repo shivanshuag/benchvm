@@ -1,4 +1,5 @@
 #!/bin/bash
 #For creator script:
-apt-get install -y debootstrap util-linux
-#apt-get install -y
+apt-get install -y debootstrap multipath-tools
+#KVM
+apt-get install kvm qemu bridge-utils uml-utilities
