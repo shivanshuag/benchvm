@@ -6,5 +6,7 @@ kvm \
 -append "root=/dev/sda2" \
 -net nic,vlan=0 \
 -net tap,vlan=0,ifname=tap0,script=./qemu-ifup \
+-nographic \
+-serial `tty` \
 test-pristine.img
 #-net nic,vlan=0,macaddr=31:33:70:00:00:01 \
