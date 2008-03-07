@@ -4,9 +4,8 @@ kvm \
 -kernel /boot/vmlinuz-2.6.22-14-server \
 -initrd /boot/initrd.img-2.6.22-14-server \
 -append "root=/dev/sda2" \
--net nic,vlan=0 \
+-net nic,vlan=0,macaddr=AA:BB:CC:DD:EE:01 \
 -net tap,vlan=0,ifname=tap0,script=./qemu-ifup \
 -nographic \
--serial `tty` \
 test-pristine.img
-#-net nic,vlan=0,macaddr=31:33:70:00:00:01 \
+#-net nic,vlan=0 \
