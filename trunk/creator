@@ -261,7 +261,7 @@ sub run_modify_filesystem {
   if(!(-e $dir  . '/root/.ssh')) {
     ex_quiet('mkdir ' . $dir  . '/root/.ssh', "Creating .ssh dir");
   }
-  ex_quiet('cp ~/.ssh/id_rsa.pub ' . $dir .
+  ex_quiet('cp /root/.ssh/id_rsa.pub ' . $dir .
            '/root/.ssh/authorized_keys', 
            "Copying ssh key");
   ex_quiet('chmod -R 700 ' . $dir . '/root/.ssh', "Setting ~/.ssh permissions");
@@ -295,7 +295,7 @@ sub sshkeygen {
   if (-e "/root/.ssh/id_rsa.pub") {
     log_info("Found old ssh key, skipping keygen");
   } else {
-    ex_quiet('ssh-keygen -t rsa -q -f ~/.ssh/id_rsa -N \'\'',
+    ex_quiet('ssh-keygen -t rsa -q -f /root/.ssh/id_rsa -N \'\'',
              "Generating SSH keys");
   }
 }
