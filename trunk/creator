@@ -265,6 +265,8 @@ sub run_modify_filesystem {
            '/root/.ssh/authorized_keys', 
            "Copying ssh key");
   ex_quiet('chmod -R 700 ' . $dir . '/root/.ssh', "Setting ~/.ssh permissions");
+  ex_queit('rm ' . $dir  . '/etc/udev/rules.d/70-persistent-net.rules',
+           "Removing persistant net rules");
 }
 
 sub run_create_image_file {
@@ -373,3 +375,4 @@ run_get_partition_uuids();
 run_copy_fs_to_image($dbs_dir, $mount_dir);
 
 clean_env();
+
