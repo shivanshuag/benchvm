@@ -255,6 +255,7 @@ sub run_modify_filesystem {
   ex_quiet('echo vmbench> ' . $dir . '/etc/hostname', "Setting Guest Hostname");
   log_info('TASK: Setting guest\'s /etc/rc.local');
   write_rclocal($dir . '/etc/rc.local');
+  log_info('TASK: Setting guest\'s /etc/event.d/ttyS0');
   write_getty($dir . '/etc/event.d/ttyS0');
   sshkeygen();
   if(!(-e $dir  . '/root/.ssh')) {
