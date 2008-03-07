@@ -133,6 +133,22 @@ sub write_rclocal {
   close RCLOCAL;
 }
 
+#Write /etc/event.d/ttyS0, so we can have serial access in kvm
+sub write_getty {
+  my($path) = @_;
+  open (GETTY, ">$path") or log_fatal("Unable to open guest /etc/event.d/ttyS0");
+  print GETTY "start on runlevel 2\n";
+  print GETTY "start on runlevel 3\n";
+  print GETTY "start on runlevel 4\n";
+  print GETTY "start on runlevel 5\n";
+  print GETTY "stop on runlevel 0\n";
+  print GETTY "stop on runlevel 1\n";
+  print GETTY "stop on runlevel 6\n";
+  print GETTY "respawn\n";
+  print GETTY "exec /sbin/getty 115200 ttyS0\n";
+  close GETTY;
+}
+
 #Use the volume UUIDs for the image to set /etc/fstab on the guest filesystem
 sub write_fstab {
   my($fstab, $root_uuid, $swap_uuid) = @_;
@@ -239,6 +255,7 @@ sub run_modify_filesystem {
   ex_quiet('echo vmbench> ' . $dir . '/etc/hostname', "Setting Guest Hostname");
   log_info('TASK: Setting guest\'s /etc/rc.local');
   write_rclocal($dir . '/etc/rc.local');
+  write_getty($dir . '/etc/event.d/ttyS0');
   sshkeygen();
   if(!(-e $dir  . '/root/.ssh')) {
     ex_quiet('mkdir ' . $dir  . '/root/.ssh', "Creating .ssh dir");
