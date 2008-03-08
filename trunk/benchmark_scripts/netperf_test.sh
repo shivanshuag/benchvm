@@ -13,7 +13,7 @@ do
 	do
 		echo -n "* Starting test($time,$mode)..."
 		netperf -c -l $time -t $mode $1 &> remote.$time.$mode.output
-		netperf -c -l $time -t STREAM_STREAM &> local.$time.$mode.output
+		netperf -c -l $time &> local.$time.$mode.output
 		echo "Done"
 	done
 done
