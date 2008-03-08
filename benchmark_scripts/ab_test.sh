@@ -3,7 +3,6 @@
 loc=~/ab_results
 mkdir -p $loc
 
-clear
 echo "Starting ab Tests"
 echo "================="
 

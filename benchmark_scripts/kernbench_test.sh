@@ -5,7 +5,6 @@ mkdir -p $loc
 
 cd /usr/src/linux
 
-clear
 echo "Starting kernbench Tests"
 echo "========================="
 

@@ -3,7 +3,6 @@
 loc=~/iozone_results
 mkdir -p $loc
 
-clear
 echo "Running iozone tests"
 echo "======================"
 

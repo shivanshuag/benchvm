@@ -3,7 +3,6 @@
 loc=~/unixbench_results
 mkdir -p $loc 
 
-clear
 echo "Starting unixbench Tests"
 echo "========================"
 

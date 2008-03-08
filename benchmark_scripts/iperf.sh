@@ -3,7 +3,6 @@
 loc=~/iperf_results
 mkdir -p $loc
 
-clear
 echo "Starting iperf Tests"
 echo "===================="
 
