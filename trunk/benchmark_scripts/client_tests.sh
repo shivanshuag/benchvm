@@ -10,3 +10,6 @@ echo "========================="
 bash kernbench_test.sh
 bash unixbench_test.sh
 
+echo "Starting Networking Tests"
+echo "========================="
+bash netperf_local_test.sh

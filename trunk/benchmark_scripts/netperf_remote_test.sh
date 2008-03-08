@@ -4,8 +4,8 @@ loc=~/netperf_results
 mkdir -p $loc
 
 clear
-echo "Starting netperf Tests"
-echo "======================"
+echo "Starting remote netperf Tests"
+echo "============================="
 
 for time in 10 30 60  
 do
@@ -13,7 +13,6 @@ do
 	do
 		echo -n "* Starting test($time,$mode)..."
 		netperf -c -l $time -t $mode $1 &> remote.$time.$mode.output
-		netperf -c -l $time &> local.$time.$mode.output
 		echo "Done"
 	done
 done
