@@ -3,7 +3,6 @@
 loc=~/bonnie++_results
 mkdir -p $loc
 
-clear
 echo "Running Bonnie++ tests"
 echo "======================"
 

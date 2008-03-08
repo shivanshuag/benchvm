@@ -3,6 +3,9 @@
 loc=~/httperf_results
 mkdir -p $loc
 
+echo "Starting httperf tests"
+echo "======================"
+
 # Timeout 
 for time_out in 1 2 4 
 do
