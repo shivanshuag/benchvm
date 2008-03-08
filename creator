@@ -37,7 +37,7 @@ my $uuid = 'test';
 my $dev_device = 0;
 my $clean = 0;
 my $swap_size_mb = 128;
-my $free_size_mb = 4096;  
+my $free_size_mb = 128;  
 my $is_mounted = 0;
 my $base_ip='192.168.133';
 my $guest_script_dir = '/root/benchvm';
@@ -58,7 +58,7 @@ GetOptions ('a|arch=s' => \$arch,
             'd|distro=s' => \$distro,
             'l|location=s' => \$location,
             'm|mirror=s' => \$mirror,
-            'ddbs=i' => \$dd_bs,
+            'f|free=i' => \$free_size_mb,
             'w|workload' => \$www_workload,
             's|scripts' => \$guest_scripts,
             'h|help' => \$help,
