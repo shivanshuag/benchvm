@@ -22,7 +22,6 @@ my $help;
 my $verbose;
 my $imagedir;
 my $mem = 256;
-my $version = '2.6.18-6-amd64';
 my $mac_base = 'AA:BB:CC:DD:EE:';
 my $network_script = './qemu-ifup';
 my $uuid;
@@ -31,8 +30,8 @@ GetOptions ('h|help' => \$help,
             'v' => \$verbose);
 
 # Display help
-if($help || ($#ARGV+1) != 2){
-  print 'Usage: [options] name count '."\n";
+if($help || ($#ARGV+1) != 3){
+  print 'Usage: [options] name count kernerlversion '."\n";
   print "  -v\t\t\t\tverbose\n";
   print "  -h --help\t\t\t\t\tThis.\n";
   exit(1);
@@ -40,6 +39,7 @@ if($help || ($#ARGV+1) != 2){
 
 my $name = $ARGV[0];
 my $count = $ARGV[1];
+my $version = $ARGV[2];
 $imagedir = 'img-'.$name;
 
 #################
