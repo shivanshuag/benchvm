@@ -14,7 +14,7 @@ do
 			for num_calls in 10 100 1000
 			do
 				echo -n "* Starting phase1 test($time_out,$num_cons,$num_calls)..."
-				httperf --hog --server 128.153.144.167 --timeout=$time_out --num-conns=$num_cons --num-calls=$num_calls &> $loc/phase1.$time_out.$num_cons.$num_calls.output
+				httperf --hog --server $1 --timeout=$time_out --num-conns=$num_cons --num-calls=$num_calls &> $loc/phase1.$time_out.$num_cons.$num_calls.output
 				echo "Done"
 			done
 		done
@@ -29,7 +29,7 @@ do
 				for calls_per_session in 1 2 4 8
 				do
 					echo -n "* Starting phase2 test($time_out,$num_sessions,$calls_per_session,$think_time)..."
-					httperf --hog --server  128.153.144.167 --timeout=$time_out --wsess=$num_sessions,$calls_per_session,$think_time &>  $loc/phase2.$time_out.$num_sessions.$calls_per_session.$think_time.output
+					httperf --hog --server $1 --timeout=$time_out --wsess=$num_sessions,$calls_per_session,$think_time &>  $loc/phase2.$time_out.$num_sessions.$calls_per_session.$think_time.output
 					echo "Done"
 				done
 			done

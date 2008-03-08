@@ -12,7 +12,7 @@ do
 	for con in 10 100 1000 
 	do
 		echo -n "* Starting test($con,$requests)..."
-		ab -q -c $con -n $requests -e $loc/$con.$requests.csv  http://128.153.144.167/
+		ab -q -c $con -n $requests -e $loc/$con.$requests.csv  http://$1/
 		echo "Done"
 	done
 done
