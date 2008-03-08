@@ -40,12 +40,15 @@ my $swap_size_mb = 128;
 my $free_size_mb = 128;
 my $is_mounted = 0;
 my $base_ip='192.168.133';
+my $guest_script_dir = '/root/benchvm';
+my $local_script_dir = './benchmark_scripts';
 
 #Debootstrap Options
 my $arch = 0;
 my $apt_include = 'openssh-server,iozone3,bonnie++,apache2,libapache2-mod-php5';
 my $distro = 'gutsy';
 my $mirror = 0;
+my $guest_scripts = 0;
 
 
 #DD Config Options
@@ -57,10 +60,11 @@ GetOptions ('a|arch=s' => \$arch,
             'm|mirror=s' => \$mirror,
             'ddbs=i' => \$dd_bs,
             'w|workload' => \$www_workload,
+            's|scripts' => \$guest_scripts,
             'h|help' => \$help,
             'v' => \$verbose,
             'p|provision=i' => \$provision,
-            'clean' => \$clean);
+            'c|clean' => \$clean);
 
 # Display help
 if($help || ($#ARGV+1) != 1){
@@ -204,10 +208,17 @@ sub ex_verbose {
   }
 }
 
+sub clean_guest() {
+  ex_quiet('rm -rf ' . $dbs_dir,
+           "[CLEAN-GUEST] Removing Deboostrap Directory", 1);
+  ex_quiet('rm -rf ' . $location . $img_name,
+           "[CLEAN-GUEST] Removing Pristine Image", 1);
+  ex_quiet('rm -rf ' . $provision_dir,
+           "[CLEAN-GUEST] Removing Image Directory", 1);
+}
+
 # Clean up directories, mount points etc...
 sub clean_env() {
-#  ex_quiet('rm -rf ' . $dbs_dir,
-#           "[CLEAN] Removing Temporary Deboostrap Directory", 1);
   if ($is_mounted) {
     ex_quiet('umount ' . $mount_dir, "[CLEAN] Unmounting Temporary Directory", 1);
   }
@@ -262,6 +273,15 @@ sub run_modify_filesystem {
   sshkeygen();
   if(!(-e $dir  . '/root/.ssh')) {
     ex_quiet('mkdir ' . $dir  . '/root/.ssh', "Creating .ssh dir");
+  }
+  if($guest_scripts) {
+    if(!(-e $dir  . $guest_script_dir)) {
+      ex_quiet('mkdir ' . $dir  . $guest_script_dir,
+               "Creating benchmark script dir");
+    }
+    ex_quiet('cp -rf ' . $local_script_dir . '/* ' .
+             $dir . $guest_script_dir,
+             "Copying Benchmark Scripts to guest");
   }
   ex_quiet('cp /root/.ssh/id_rsa.pub ' . $dir .
            '/root/.ssh/authorized_keys', 
@@ -380,7 +400,7 @@ sub provision_image {
 
 
 if($clean) {
-  clean_env();
+  clean_guest();
   exit(0);
 }
 
