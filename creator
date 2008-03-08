@@ -45,7 +45,7 @@ my $local_script_dir = './benchmark_scripts';
 
 #Debootstrap Options
 my $arch = 0;
-my $apt_include = 'openssh-server,iozone3,bonnie++,apache2,libapache2-mod-php5';
+my $apt_include = 'openssh-server,iozone3,bonnie++,apache2,libapache2-mod-php5,libc6-xen';
 my $distro = 'gutsy';
 my $mirror = 0;
 my $guest_scripts = 0;
