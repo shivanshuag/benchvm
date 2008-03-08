@@ -29,6 +29,7 @@ if($user ne 'root'){
 #General
 my $provision = 0;
 my $verbose = 0;
+my $www_workload = 0;
 my $help;
 my $count = 4;
 my $location = './';
@@ -42,7 +43,7 @@ my $base_ip='192.168.133';
 
 #Debootstrap Options
 my $arch = 0;
-my $apt_include = 'openssh-server,iozone3,bonnie++,apache2';
+my $apt_include = 'openssh-server,iozone3,bonnie++,apache2,libapache2-mod-php5';
 my $distro = 'gutsy';
 my $mirror = 0;
 
@@ -55,6 +56,7 @@ GetOptions ('a|arch=s' => \$arch,
             'l|location=s' => \$location,
             'm|mirror=s' => \$mirror,
             'ddbs=i' => \$dd_bs,
+            'w|workload' => \$www_workload,
             'h|help' => \$help,
             'v' => \$verbose,
             'p|provision=i' => \$provision,
@@ -267,6 +269,12 @@ sub run_modify_filesystem {
   ex_quiet('chmod -R 700 ' . $dir . '/root/.ssh', "Setting ~/.ssh permissions");
   ex_quiet('rm -f ' . $dir  . '/etc/udev/rules.d/*persistent-net*',
            "Removing persistant net rules");
+  if ($www_workload) {
+    ex_quiet('rm -rf ' . $dir  . '/var/www/*',
+             "Removing exsisting /var/www/* files");
+    ex_verbose('tar xvzpf workload.tar.gz -C ' . $dir . '/var/www/', 
+               "Extracting www workload");
+  }
 }
 
 sub run_create_image_file {
@@ -399,4 +407,5 @@ if($provision) {
   provision_image($location . $img_name, $provision_dir, $provision);
   exit(0);
 }
+
 
