@@ -1,4 +1,0 @@
-Requires, Debian based system, debootstrap
-
-make
-make clean
