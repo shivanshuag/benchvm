@@ -10,6 +10,24 @@ apt-get install -y debootstrap multipath-tools
 apt-get install -y kvm kvm-source module-assistant qemu bridge-utils uml-utilities
 m-a a-i kvm
 #Xen
+#install xen from tarball
+apt-get install -y bridge-utils
+wget http://mirror.clarkson.edu/benchvm/xen-3.2.0.tar.bz2 -O /root/xen-3.2.0.tar.bz2 
+echo 'Extracting tarball...'
+tar xjpf /root/xen-3.2.0.tar.bz2
+echo 'Installing Xen...'
+/root/dist/install.sh
+echo 'Building initrd...'
+depmod 2.6.18.8-xen
+mkinitramfs -o /boot/initrd-2.6.18.8-xen.img 2.6.18.8-xen
+echo ''
+echo 'Safe to ignore missing find firmware messages.'
+echo 'Adding Xen GRUB entry...'
+echo '' >> /boot/grub/menu.lst
+echo 'title Xen 3.2.0 / Linux 2.6.18.8-xen' >> /boot/grub/menu.lst
+echo 'kernel /boot/xen-3.2.0.gz' >> /boot/grub/menu.lst
+echo 'module /boot/vmlinuz-2.6.18.8-xen root=/dev/sda4 ro console=tty0' >> /boot/grub/menu.lst
+echo 'module /boot/initrd-2.6.18.8-xen.img' >> /boot/grub/menu.lst
 
 cp ./dom0/interfaces /etc/network/interfaces
 /etc/init.d/networking restart
