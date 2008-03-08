@@ -20,13 +20,18 @@ if($user ne 'root'){
 #General Variables
 my $help;
 my $verbose;
-my $imgdir;
+my $imagedir;
+my $mem = 256;
+my $version = '2.6.18-6-amd64';
+my $mac_base = 'AA:BB:CC:DD:EE:';
+my $network_script = './qemu-ifup';
+my $uuid;
 
 GetOptions ('h|help' => \$help,
             'v' => \$verbose);
 
 # Display help
-if($help || ($#ARGV+1) != 1){
+if($help || ($#ARGV+1) != 2){
   print 'Usage: [options] name count '."\n";
   print "  -v\t\t\t\tverbose\n";
   print "  -h --help\t\t\t\t\tThis.\n";
@@ -35,25 +40,112 @@ if($help || ($#ARGV+1) != 1){
 
 my $name = $ARGV[0];
 my $count = $ARGV[1];
-
 $imagedir = 'img-'.$name;
-if ( !(-e $imagedir)){
-    die("Location not found");
-}
 
 #################
 #  Subroutines  #
 #################
 
-sub start_image {
-    my $start_command = '';
 
+#Log File
+my $logfilename="starter-kvm.log.$name";
+open(LOGFILE, ">$logfilename") or die("Unable to open logfile: $logfilename");
+
+#Log to stdout & logfile, don't quit
+sub log_info {
+  print LOGFILE "$_[0]\n";
+  print "$_[0]\n";
+}
+
+#Log to stdout & logfile, then die
+sub log_fatal {
+  print LOGFILE "$_[0]\n";
+  print "$_[0]\n";
+  exit(1); #Epic fail.
+}
+
+#Run a shell command
+#Will not log std out/err unless return code != 0
+#Returns the contents of std out/err
+#Will die on return code != 0, unless flag $do_not_die is set
+sub ex_quiet {
+  my($command,$description,$do_not_die) = @_;
+  if ($description) {
+    log_info("TASK: $description");
+  }
+  if ($verbose) {
+    log_info("COMMAND: $command");
+  }
+  my $ret = `$command 2>&1`;
+  if ($? != 0) {
+    log_info("OUTPUT: $ret\n");
+    if ($do_not_die) {
+      log_info("ERROR: Return Code $?\n");
+    } else {
+      log_fatal("ERROR: Return Code $?\n");
+    }
+  }
+  chomp($ret);
+  return $ret;
+}
+
+sub get_root_uuid {
+  my($img_file)=@_;
+
+  my $uuid_root;
+
+  my $dev_device = ex_quiet('losetup -f', "Getting Free Loopback Device");
+  log_info('INFO: Found free loopback device: ' . $dev_device);
+  ex_quiet('losetup ' . $dev_device . ' ' . $img_file,
+           "Creating Loopback Block Device");
+  ex_quiet('kpartx -av ' . $dev_device, "Creating Partition Device Mappings");
+  my $dev_device_num = $dev_device;
+  $dev_device_num =~ s/.*\/loop//g;
+  my $dev_root_partition = '/dev/mapper/loop' . $dev_device_num . 'p2';
+
+  $uuid_root = ex_quiet('blkid -s UUID ' . $dev_root_partition, "Obtaining root UUID");
+  $uuid_root =~ s/.*UUID="//g;
+  $uuid_root =~ s/"//g;
+  log_info('INFO: Found root UUID: ' . $uuid_root);
+
+  ex_quiet('kpartx -dv ' . $dev_device,
+           'Removing Partition Device Mappings', 1);
+  ex_quiet('losetup -d ' . $dev_device,
+	   'Removing Loopback Device', 1);
+  return $uuid_root;
+}
+
+sub start_image {
+  my($num) = @_;
+  if($num >= 255){
+    log_fatal('Max number of images supported is currently 254');
+  }
+    
+  my $cmd = 'kvm';
+  $cmd .= ' -m ' . $mem;
+  $cmd .= ' -kernel /boot/vmlinuz-' . $version;
+  $cmd .= ' -initrd /boot/initrd.img-' . $version;
+
+  $cmd .= ' -append "root=UUID=' . $uuid . ' console=tty0 console=ttyS0,115200n8"';
+  $cmd .= ' -net nic,vlan=0,macaddr=' . $mac_base . sprintf("%02x",$num);
+  $cmd .= ' -net tap,vlan=0,ifname=tap' . $num . ',script='.$network_script;
+  $cmd .= ' -nographic';
+  $cmd .= ' -daemonize';
+  $cmd .= ' ' . $imagedir . '/image-' . $num . '.img';
+
+  return $cmd;
 }
 
 ###########
 #   Run   #
 ###########
 
-for(my $i=0; $i < count; $i++){
+if ( !(-e $imagedir)){
+    log_fatal("Location not found");
+}
 
+$uuid = get_root_uuid($name . '-pristine.img');
+ 
+for(my $i=0; $i < $count; $i++){
+  ex_quiet(start_image($i),'Starting image ' . $i);
 } 
