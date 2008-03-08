@@ -30,8 +30,8 @@ GetOptions ('h|help' => \$help,
             'v' => \$verbose);
 
 # Display help
-if($help || ($#ARGV+1) != 3){
-  print 'Usage: [options] name count kernerlversion '."\n";
+if($help || ($#ARGV+1) != 2){
+  print 'Usage: [options] name count '."\n";
   print "  -v\t\t\t\tverbose\n";
   print "  -h --help\t\t\t\t\tThis.\n";
   exit(1);
@@ -39,9 +39,11 @@ if($help || ($#ARGV+1) != 3){
 
 my $name = $ARGV[0];
 my $count = $ARGV[1];
-my $version = $ARGV[2];
 $imagedir = 'img-'.$name;
 
+my $version = `uname -a | awk '{ print \$3 }'`;
+chomp($version);
+print $version . "\n";
 #################
 #  Subroutines  #
 #################
