@@ -297,8 +297,15 @@ sub run_modify_filesystem {
   ex_quiet('rm -rf ' . $dir  . '/var/www/*',
            "Removing exsisting /var/www/* files");
   if ($www_workload) {
-        ex_verbose('tar xvzpf workload.tar.gz -C ' . $dir . '/var/www/', 
-               "Extracting www workload");
+        ex_verbose('tar xvzf workload.tar.gz -C ' . $dir . '/var/www/', 
+                   "Extracting www workload");
+        ex_quiet('chmod 777 -R ' . $dir  . '/var/www/*',
+                 "Setting permissions on /var/www");
+        ex_quiet('chown root -R ' . $dir  . '/var/www/*',
+                 "Setting owner on /var/www");
+        ex_quiet('chgrp root -R ' . $dir  . '/var/www/*',
+                 "Setting group on /var/www");
+
   }
 }
 
