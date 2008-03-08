@@ -274,6 +274,8 @@ sub run_modify_filesystem {
   if(!(-e $dir  . '/root/.ssh')) {
     ex_quiet('mkdir ' . $dir  . '/root/.ssh', "Creating .ssh dir");
   }
+  ex_quiet('rm -rf ' . $dir . $guest_script_dir,
+           "Removing current Benchmark Scripts on guest");
   if($guest_scripts) {
     if(!(-e $dir  . $guest_script_dir)) {
       ex_quiet('mkdir ' . $dir  . $guest_script_dir,
@@ -282,6 +284,9 @@ sub run_modify_filesystem {
     ex_quiet('cp -rf ' . $local_script_dir . '/* ' .
              $dir . $guest_script_dir,
              "Copying Benchmark Scripts to guest");
+    ex_quiet('chmod 700 -R ' . $dir . $guest_script_dir,
+             "Changing permissions on script directory");
+
   }
   ex_quiet('cp /root/.ssh/id_rsa.pub ' . $dir .
            '/root/.ssh/authorized_keys', 
@@ -289,10 +294,10 @@ sub run_modify_filesystem {
   ex_quiet('chmod -R 700 ' . $dir . '/root/.ssh', "Setting ~/.ssh permissions");
   ex_quiet('rm -f ' . $dir  . '/etc/udev/rules.d/*persistent-net*',
            "Removing persistant net rules");
+  ex_quiet('rm -rf ' . $dir  . '/var/www/*',
+           "Removing exsisting /var/www/* files");
   if ($www_workload) {
-    ex_quiet('rm -rf ' . $dir  . '/var/www/*',
-             "Removing exsisting /var/www/* files");
-    ex_verbose('tar xvzpf workload.tar.gz -C ' . $dir . '/var/www/', 
+        ex_verbose('tar xvzpf workload.tar.gz -C ' . $dir . '/var/www/', 
                "Extracting www workload");
   }
 }
