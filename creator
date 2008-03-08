@@ -307,7 +307,7 @@ sub run_map_image {
   my($img_file)=@_;
   $dev_device = ex_quiet('losetup -f', "Getting Free Loopback Device");
   log_info('INFO: Found free loopback device: ' . $dev_device);
-  ex_quiet('losetup ' . $dev_device . ' ' . $location . $img_name,
+  ex_quiet('losetup ' . $dev_device . ' ' . $img_file,
            "Creating Loopback Block Device");
   ex_quiet('kpartx -av ' . $dev_device, "Creating Partition Device Mappings");
   my $dev_device_num = $dev_device;

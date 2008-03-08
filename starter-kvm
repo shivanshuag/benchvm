@@ -1,0 +1,59 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Getopt::Long;
+Getopt::Long::Configure ('bundling');
+
+#Check to make sure user is root
+my $user = `whoami`;
+chomp $user;
+if($user ne 'root'){
+  print 'Superuser privileges are necessary for some parts of this script; ';
+  print 'use sudo.' . "\n";
+  exit(1);
+}
+
+#################
+#  Global Vars  #
+#################
+
+#General Variables
+my $help;
+my $verbose;
+my $imgdir;
+
+GetOptions ('h|help' => \$help,
+            'v' => \$verbose);
+
+# Display help
+if($help || ($#ARGV+1) != 1){
+  print 'Usage: [options] name count '."\n";
+  print "  -v\t\t\t\tverbose\n";
+  print "  -h --help\t\t\t\t\tThis.\n";
+  exit(1);
+}
+
+my $name = $ARGV[0];
+my $count = $ARGV[1];
+
+$imagedir = 'img-'.$name;
+if ( !(-e $imagedir)){
+    die("Location not found");
+}
+
+#################
+#  Subroutines  #
+#################
+
+sub start_image {
+    my $start_command = '';
+
+}
+
+###########
+#   Run   #
+###########
+
+for(my $i=0; $i < count; $i++){
+
+} 
