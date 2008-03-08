@@ -265,7 +265,7 @@ sub run_modify_filesystem {
            '/root/.ssh/authorized_keys', 
            "Copying ssh key");
   ex_quiet('chmod -R 700 ' . $dir . '/root/.ssh', "Setting ~/.ssh permissions");
-  ex_quiet('rm -f ' . $dir  . '/etc/udev/rules.d/70-persistent-net.rules',
+  ex_quiet('rm -f ' . $dir  . '/etc/udev/rules.d/*persistent-net*',
            "Removing persistant net rules");
 }
 
@@ -399,3 +399,4 @@ if($provision) {
   provision_image($location . $img_name, $provision_dir, $provision);
   exit(0);
 }
+

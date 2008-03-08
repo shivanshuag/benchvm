@@ -89,6 +89,23 @@ sub ex_quiet {
   return $ret;
 }
 
+# Run a shell command
+# std out/err go to this processes std out/err
+# Logs on failure.
+sub ex_verbose {
+  my($command,$description) = @_;
+  if ($description) {
+    log_info("TASK: $description");
+  }
+  if ($verbose) { 
+    log_info("COMMAND: $command");
+  }
+  system("$command");
+  if ($? != 0) {
+    log_fatal("ERROR: Return Code $?");
+  }
+}
+
 sub get_root_uuid {
   my($img_file)=@_;
 
@@ -147,5 +164,5 @@ if ( !(-e $imagedir)){
 $uuid = get_root_uuid($name . '-pristine.img');
  
 for(my $i=0; $i < $count; $i++){
-  ex_quiet(start_image($i),'Starting image ' . $i);
+  ex_verbose(start_image($i),'Starting image ' . $i);
 } 
