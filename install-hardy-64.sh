@@ -13,7 +13,7 @@ apt-get install -y kvm qemu bridge-utils uml-utilities
 apt-get install -y bridge-utils
 wget http://mirror.clarkson.edu/benchvm/xen-3.2.0.tar.bz2 -O /root/xen-3.2.0.tar.bz2 
 echo 'Extracting tarball...'
-tar xjpf /root/xen-3.2.0.tar.bz2
+tar xjpf /root/xen-3.2.0.tar.bz2 -C /root/
 echo 'Installing Xen...'
 sh /root/dist/install.sh
 echo 'Building initrd...'
