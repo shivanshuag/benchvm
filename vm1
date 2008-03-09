@@ -6,7 +6,7 @@
 #
 #  Kernel + memory size
 #
-kernel      = '/boot/vmlinuz-2.6.18.8'
+kernel      = '/boot/vmlinuz-2.6.18.8-xen'
 ramdisk     = '/boot/initrd-2.6.18.8-xen.img'
 memory      = '512'
 
@@ -14,11 +14,7 @@ memory      = '512'
 #  Disk device(s).
 #
 root        = '/dev/hda2 ro'
-disk        = [
-                  'tap:aio:/root/vm1-swap.img,hda1,w',
-                  'tap:aio:/root/vm1.img,hda2,w',
-              ]
-
+disk        = ['tap:aio:/root/benchvm/img-test/image-0.img,hda,w']
 
 #
 #  Hostname
@@ -28,7 +24,7 @@ name        = 'vm1'
 #
 #  Networking
 #
-vif         = [ 'bridge=br0,mac=00:16:3E:5B:4E:2A' ]
+vif         = [ 'bridge=br0,mac=00:16:3E:5B:4E:19' ]
 #vif  = ['mac=00:16:3E:5B:4E:2A,bridge=xen-br0']
 #
 #  Behaviour
