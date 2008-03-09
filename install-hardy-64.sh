@@ -28,6 +28,10 @@ echo 'kernel /boot/xen-3.2.0.gz' >> /boot/grub/menu.lst
 echo 'module /boot/vmlinuz-2.6.18.8-xen root=/dev/sda4 ro console=tty0' >> /boot/grub/menu.lst
 echo 'module /boot/initrd-2.6.18.8-xen.img' >> /boot/grub/menu.lst
 
+echo 'downloading and installing gutsy version of iproute package for broken ip command'
+wget http://mirror.clarkson.edu/pub/ubuntu/pool/main/i/iproute/iproute_20070313-1ubuntu2_amd64.deb -O /root/iproute_20070313-1ubuntu2_amd64.deb
+dkg -i --force-depends /root/iproute_20070313-1ubuntu2_amd64.deb
+
 cp ./dom0/interfaces /etc/network/interfaces
 /etc/init.d/networking restart
 ./start_kvm.sh
