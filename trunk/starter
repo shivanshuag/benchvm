@@ -24,26 +24,34 @@ my $imagedir;
 my $mem = 256;
 my $mac_base = 'AA:BB:CC:DD:EE:';
 my $network_script = './qemu-ifup';
-my $uuid;
+
+my $kvm = 0;
+my $xen = 0;
 
 GetOptions ('h|help' => \$help,
+            'x|xen' => \$xen,
+            'k|kvm' => \$kvm,
+            'm|memory=i' => \$mem,
             'v' => \$verbose);
 
 # Display help
-if($help || ($#ARGV+1) != 2){
+if($help || ($#ARGV+1) != 2 || ($xen == $kvm)){
   print 'Usage: [options] name count '."\n";
+  print '  Either -k or -x must be specified, but not both'."\n";
+  print "  -k\t\t\t\tkvm\n";
+  print "  -x\t\t\t\txen\n";
+  print "  -m\t\t\t\tmemory in MB\n";
   print "  -v\t\t\t\tverbose\n";
   print "  -h --help\t\t\t\t\tThis.\n";
   exit(1);
 }
 
+
+
 my $name = $ARGV[0];
 my $count = $ARGV[1];
 $imagedir = 'img-'.$name;
 
-my $version = `uname -a | awk '{ print \$3 }'`;
-chomp($version);
-print $version . "\n";
 #################
 #  Subroutines  #
 #################
@@ -134,23 +142,46 @@ sub get_root_uuid {
   return $uuid_root;
 }
 
-sub start_image {
-  my($num) = @_;
-  if($num >= 255){
-    log_fatal('Max number of images supported is currently 254');
+sub start_image_kvm {
+  my($num, $root_uuid, $kernel_ver, $img) = @_;
+  if($num >= 155){
+    log_fatal('Max number of images supported is currently 154');
   }
     
   my $cmd = 'kvm';
   $cmd .= ' -m ' . $mem;
-  $cmd .= ' -kernel /boot/vmlinuz-' . $version;
-  $cmd .= ' -initrd /boot/initrd.img-' . $version;
+  $cmd .= ' -kernel /boot/vmlinuz-' . $kernel_ver;
+  $cmd .= ' -initrd /boot/initrd.img-' . $kernel_ver;
 
-  $cmd .= ' -append "root=UUID=' . $uuid . ' console=tty0 console=ttyS0,115200n8"';
+  $cmd .= ' -append "root=UUID=' . $root_uuid . ' console=tty0 console=ttyS0,115200n8"';
   $cmd .= ' -net nic,vlan=0,macaddr=' . $mac_base . sprintf("%02x",$num);
   $cmd .= ' -net tap,vlan=0,ifname=tap' . $num . ',script='.$network_script;
   $cmd .= ' -nographic';
   $cmd .= ' -daemonize';
-  $cmd .= ' ' . $imagedir . '/image-' . $num . '.img';
+  $cmd .= ' ' . $img;
+
+  return $cmd;
+}
+
+sub start_image_xen {
+  my($num, $root_uuid, $kernel_ver, $img) = @_;
+  if($num >= 155){
+    log_fatal('Max number of images supported is currently 154');
+  }
+    
+  my $cmd = 'xm create /dev/null';
+  $cmd .= ' name=benchvm' . $num;
+  $cmd .= ' memory=' . $mem;
+  $cmd .= ' kernel=/boot/vmlinuz-' . $kernel_ver;
+  $cmd .= ' ramdisk=/boot/initrd.img-' . $kernel_ver;
+  $cmd .= ' disk=tap:aio:' . $img . ',hda,w';
+  $cmd .= ' root=UUID=' . $root_uuid;
+  $cmd .= ' vif=bridge=br0,mac=' . $mac_base . sprintf("%02x",$num);
+  $cmd .= ' on_poweroff=destroy';
+  $cmd .= ' on_reboot=restart';
+  $cmd .= ' on_crash=preserve';
+  $cmd .= ' extra=xencons=tty';
+
 
   return $cmd;
 }
@@ -160,11 +191,20 @@ sub start_image {
 ###########
 
 if ( !(-e $imagedir)){
-    log_fatal("Location not found");
+    log_fatal("Image directory not found");
 }
 
-$uuid = get_root_uuid($name . '-pristine.img');
+my $version = ex_quiet(`uname -r'`, "Getting current kernel information");
+log_info('Found Current Kernel: ' . $version);
+my $uuid = get_root_uuid($name . '-pristine.img');
  
 for(my $i=0; $i < $count; $i++){
-  ex_verbose(start_image($i),'Starting image ' . $i);
+  my $img_file = $imagedir . '/image-' . $num . '.img';
+  if ($kvm) {
+    ex_verbose(start_image_kvm($i, $uuid, $version, $img_file),
+    'Starting image ' . $i);
+  } else if ($xen) {
+    ex_verbose(start_image_xen($i, $uuid, $version, $img_file),
+    'Starting image ' . $i);
+  }
 } 
