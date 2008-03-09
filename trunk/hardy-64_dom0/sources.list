@@ -2,12 +2,12 @@
 # See http://help.ubuntu.com/community/UpgradeNotes for how to upgrade to
 # newer versions of the distribution.
 
-deb http://us.archive.ubuntu.com/ubuntu/ gutsy main restricted
+deb http://us.archive.ubuntu.com/ubuntu/ hardy main restricted
 deb-src http://us.archive.ubuntu.com/ubuntu/ hardy main restricted
 
 ## Major bug fix updates produced after the final release of the
 ## distribution.
-deb http://us.archive.ubuntu.com/ubuntu/ gutsy-updates main restricted
+deb http://us.archive.ubuntu.com/ubuntu/ hardy-updates main restricted
 deb-src http://us.archive.ubuntu.com/ubuntu/ hardy-updates main restricted
 
 ## N.B. software from this repository is ENTIRELY UNSUPPORTED by the Ubuntu
