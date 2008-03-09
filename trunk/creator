@@ -46,6 +46,7 @@ my $local_script_dir = './benchmark_scripts';
 #Debootstrap Options
 my $arch = 0;
 my $apt_include = 'openssh-server,iozone3,bonnie++,apache2,libapache2-mod-php5';
+my $apt_exclude = 'initramfs-tools';
 my $distro = 'gutsy';
 my $mirror = 0;
 my $guest_scripts = 0;
@@ -242,6 +243,9 @@ sub mkdebootstrapcommand {
   }
   if ($apt_include) {
     $debootstrapcommand .= '--include=' . $apt_include . ' ';
+  }
+  if ($apt_exclude) {
+    $debootstrapcommand .= '--exclude=' . $apt_exclude . ' ';
   }
   $debootstrapcommand .= $distro . ' ' . $dbs_dir;
   if ($mirror) {
