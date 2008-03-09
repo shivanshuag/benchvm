@@ -173,9 +173,10 @@ sub start_image_xen {
   $cmd .= ' name=benchvm' . $num;
   $cmd .= ' memory=' . $mem;
   $cmd .= ' kernel=/boot/vmlinuz-' . $kernel_ver;
-  $cmd .= ' ramdisk=/boot/initrd.img-' . $kernel_ver;
+  $cmd .= ' ramdisk=/boot/initrd-' . $kernel_ver . '.img';
   $cmd .= ' disk=tap:aio:' . $img . ',hda,w';
-  $cmd .= ' root=UUID=' . $root_uuid;
+#  $cmd .= ' root=UUID=' . $root_uuid;
+  $cmd .= ' root=/dev/hda2';
   $cmd .= ' vif=bridge=br0,mac=' . $mac_base . sprintf("%02x",$num);
   $cmd .= ' on_poweroff=destroy';
   $cmd .= ' on_reboot=restart';
@@ -194,17 +195,18 @@ if ( !(-e $imagedir)){
     log_fatal("Image directory not found");
 }
 
-my $version = ex_quiet(`uname -r'`, "Getting current kernel information");
+my $version = ex_quiet('uname -r', "Getting current kernel information");
 log_info('Found Current Kernel: ' . $version);
 my $uuid = get_root_uuid($name . '-pristine.img');
  
 for(my $i=0; $i < $count; $i++){
-  my $img_file = $imagedir . '/image-' . $num . '.img';
+  my $img_file = $imagedir . '/image-' . $i . '.img';
   if ($kvm) {
     ex_verbose(start_image_kvm($i, $uuid, $version, $img_file),
     'Starting image ' . $i);
-  } else if ($xen) {
-    ex_verbose(start_image_xen($i, $uuid, $version, $img_file),
+  } elsif ($xen) {
+    my $pwd = ex_quiet('pwd', 'Getting current dir');
+    ex_verbose(start_image_xen($i, $uuid, $version, $pwd . '/' .  $img_file),
     'Starting image ' . $i);
   }
 } 
