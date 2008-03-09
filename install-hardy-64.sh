@@ -7,7 +7,7 @@ apt-get install -y emacs22-nox vim
 #For creator script:
 apt-get install -y debootstrap multipath-tools
 #KVM
-apt-get install -y kvm kvm-source module-assistant qemu bridge-utils uml-utilities
+apt-get install -y kvm qemu bridge-utils uml-utilities
 m-a a-i kvm
 #Xen
 #install xen from tarball
