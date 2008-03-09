@@ -15,7 +15,7 @@ wget http://mirror.clarkson.edu/benchvm/xen-3.2.0.tar.bz2 -O /root/xen-3.2.0.tar
 echo 'Extracting tarball...'
 tar xjpf /root/xen-3.2.0.tar.bz2
 echo 'Installing Xen...'
-/root/dist/install.sh
+sh /root/dist/install.sh
 echo 'Building initrd...'
 depmod 2.6.18.8-xen
 mkinitramfs -o /boot/initrd-2.6.18.8-xen.img 2.6.18.8-xen
@@ -29,8 +29,14 @@ echo 'module /boot/vmlinuz-2.6.18.8-xen root=/dev/sda4 ro console=tty0' >> /boot
 echo 'module /boot/initrd-2.6.18.8-xen.img' >> /boot/grub/menu.lst
 
 echo 'downloading and installing gutsy version of iproute package for broken ip command'
-wget http://mirror.clarkson.edu/pub/ubuntu/pool/main/i/iproute/iproute_20070313-1ubuntu2_amd64.deb -O /root/iproute_20070313-1ubuntu2_amd64.deb
-dkg -i --force-depends /root/iproute_20070313-1ubuntu2_amd64.deb
+
+wget http://mirror.clarkson.edu/benchvm/iproute/iproute_20070313-1ubuntu2_amd64.deb -O /root/iproute_20070313-1ubuntu2_amd64.deb
+
+wget http://mirror.clarkson.edu/benchvm/iproute/libdb4.5_4.5.20-5ubuntu3_amd64.deb -O /root/libdb4.5_4.5.20-5ubuntu3_amd64.\
+deb
+
+dpkg -i /root/iproute_20070313-1ubuntu2_amd64.deb /root/libdb4.5_4.5.20-5ubuntu3_amd64.deb
+
 
 cp ./dom0/interfaces /etc/network/interfaces
 /etc/init.d/networking restart
