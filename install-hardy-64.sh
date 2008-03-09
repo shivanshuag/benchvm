@@ -8,7 +8,6 @@ apt-get install -y emacs22-nox vim
 apt-get install -y debootstrap multipath-tools
 #KVM
 apt-get install -y kvm qemu bridge-utils uml-utilities
-m-a a-i kvm
 #Xen
 #install xen from tarball
 apt-get install -y bridge-utils
