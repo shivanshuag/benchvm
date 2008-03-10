@@ -45,7 +45,7 @@ my $local_script_dir = './benchmark_scripts';
 
 #Debootstrap Options
 my $arch = 0;
-my $apt_include = 'openssh-server,iozone3,bonnie++,apache2,libapache2-mod-php5,build-essential';
+my $apt_include = 'openssh-server,iozone3,bonnie++,apache2,libapache2-mod-php5,build-essential,netperf';
 my $apt_exclude = 'initramfs-tools';
 my $distro = 'gutsy';
 my $mirror = 0;
