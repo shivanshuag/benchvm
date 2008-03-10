@@ -5,7 +5,7 @@ apt-get update
 apt-get install -y openssh-server iozone3 bonnie++ apache2 libapache2-mod-php5 build-essential
 
 #get workloads
-/root/benchvm/get-workloads.sh
+/root/benchvm/get_workloads.sh
 
 #copy and chmod benchmark script folders
 cp -rf /root/benchvm/benchmark_scripts/ /root/ 
