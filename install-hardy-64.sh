@@ -15,7 +15,7 @@ wget http://mirror.clarkson.edu/benchvm/xen-3.2.0.tar.bz2 -O /root/xen-3.2.0.tar
 echo 'Extracting tarball...'
 tar xjpf /root/xen-3.2.0.tar.bz2 -C /root/
 echo 'Installing Xen...'
-sh /root/dist/install.sh
+cd /root/dist && ./install.sh
 echo 'Building initrd...'
 depmod 2.6.18.8-xen
 mkinitramfs -o /boot/initrd-2.6.18.8-xen.img 2.6.18.8-xen
