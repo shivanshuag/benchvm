@@ -27,11 +27,13 @@ my $network_script = './qemu-ifup';
 
 my $kvm = 0;
 my $xen = 0;
+my $watch = 0;
 
 GetOptions ('h|help' => \$help,
             'x|xen' => \$xen,
             'k|kvm' => \$kvm,
             'm|memory=i' => \$mem,
+            'w|watch' => \$watch,
             'v' => \$verbose);
 
 # Display help
@@ -157,7 +159,9 @@ sub start_image_kvm {
   $cmd .= ' -net nic,vlan=0,macaddr=' . $mac_base . sprintf("%02x",$num);
   $cmd .= ' -net tap,vlan=0,ifname=tap' . $num . ',script='.$network_script;
   $cmd .= ' -nographic';
-  $cmd .= ' -daemonize';
+  if (!($watch)) {
+    $cmd .= ' -daemonize';
+  }
   $cmd .= ' ' . $img;
 
   return $cmd;
@@ -183,6 +187,9 @@ sub start_image_xen {
   $cmd .= ' on_crash=preserve';
   $cmd .= ' extra=xencons=tty';
 
+  if ($watch) {
+    $cmd .= ' -c'; 
+  }
 
   return $cmd;
 }
@@ -198,7 +205,9 @@ if ( !(-e $imagedir)){
 my $version = ex_quiet('uname -r', "Getting current kernel information");
 log_info('Found Current Kernel: ' . $version);
 my $uuid = get_root_uuid($name . '-pristine.img');
- 
+if($watch) {
+  $count = 1;
+}
 for(my $i=0; $i < $count; $i++){
   my $img_file = $imagedir . '/image-' . $i . '.img';
   if ($kvm) {
