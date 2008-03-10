@@ -2,7 +2,7 @@
 cp /root/benchvm/hardy-64_dom/sources.list /etc/apt/
 apt-get update
 #install packages
-apt-get install -y openssh-server iozone3 bonnie++ apache2 libapache2-mod-php5 build-essential netperf
+apt-get install -y openssh-server iozone3 bonnie++ apache2 libapache2-mod-php5 build-essential netperf time
 
 #get workloads
 /root/benchvm/clean_old_workloads.sh
