@@ -16,11 +16,11 @@ do
 		for size in $min_size 
 		do
 			echo -n "* Starting test(b,$test_runs,$num_files,$size)..."
-			/usr/sbin/bonnie++ -b -x $test_runs -n $num_files -s $size &> $loc/b.$test_runs.$num_files.$size.output
+			/usr/sbin/bonnie++ -u root -b -x $test_runs -n $num_files -s $size &> $loc/b.$test_runs.$num_files.$size.output
 			echo "Done"
 
 			echo -n "* Starting test( ,$test_runs,$num_files,$size)..."
-			/usr/sbin/bonnie++ -x $test_runs -n $num_files -s $size &> $loc/$test_runs.$num_files.$size.output
+			/usr/sbin/bonnie++ -u root -x $test_runs -n $num_files -s $size &> $loc/$test_runs.$num_files.$size.output
 			echo "Done"
 		done
 	done
