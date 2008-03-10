@@ -11,9 +11,9 @@ let max_size=$min_size*3
 
 for test_runs in 2 
 do
-	for num_files in 1 2 4 
+	for num_files in 1 2 
 	do
-		for size in $(seq $min_size 1024 $max_size)
+		for size in $min_size 
 		do
 			echo -n "* Starting test(b,$test_runs,$num_files,$size)..."
 			/usr/sbin/bonnie++ -b -x $test_runs -n $num_files -s $size &> $loc/b.$test_runs.$num_files.$size.output
@@ -26,5 +26,5 @@ do
 	done
 done
 
-echo "Finished Tests
+echo "Finished Tests"
 
