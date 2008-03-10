@@ -16,10 +16,10 @@ tar xjpf /root/benchvm/linux-2.6.24.3.tar.bz2 -C /usr/src
 ln -s /usr/src/linux-2.6.24.3 /usr/src/linux
 
 #kernbench
-tar xvpf /root/benchvm/kernbench-0.42.tar.gz -C /root
+tar xzpf /root/benchvm/kernbench-0.42.tar.gz -C /root
 
 #specweb workload 
-tar xvzf /root/benchvm/workload.tar.gz -C /var/www/
+tar xzpf /root/benchvm/workload.tar.gz -C /var/www/
 chmod 777 -R /var/www/*
 chown root -R /var/www/*
 chgrp root -R /var/www/*
