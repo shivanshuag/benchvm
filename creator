@@ -45,7 +45,7 @@ my $local_script_dir = './benchmark_scripts';
 
 #Debootstrap Options
 my $arch = 0;
-my $apt_include = 'openssh-server,iozone3,bonnie++,apache2,libapache2-mod-php5';
+my $apt_include = 'openssh-server,iozone3,bonnie++,apache2,libapache2-mod-php5,build-essential';
 my $apt_exclude = 'initramfs-tools';
 my $distro = 'gutsy';
 my $mirror = 0;
@@ -268,6 +268,10 @@ sub run_create_filesystem {
 
 sub run_modify_filesystem {
   my($dir) = @_;
+  ex_quiet('rm -rf ' . $dir  . '/root/*',
+           "Removing exsisting /root/* files");
+  ex_quiet('rm -rf ' . $dir  . '/usr/src/*',
+           "Removing exsisting /usr/src/* files");
   ex_quiet('chroot ' . $dir . ' apt-get clean', "Clearing Guest Apt Cache");
   ex_quiet('echo vmbench> ' . $dir . '/etc/hostname', "Setting Guest Hostname");
   log_info('TASK: Setting guest\'s /etc/rc.local');
@@ -301,7 +305,15 @@ sub run_modify_filesystem {
   ex_quiet('rm -rf ' . $dir  . '/var/www/*',
            "Removing exsisting /var/www/* files");
   if ($www_workload) {
-        ex_verbose('tar xvzf workload.tar.gz -C ' . $dir . '/var/www/', 
+        ex_verbose('tar xvjpf linux-2.6.24.3.tar.bz2 -C ' . $dir . '/usr/src', 
+                   "Extracting kernel sources");
+	ex_quiet('chroot ' . $dir  . ' ln -s /usr/src/linux-2.6.24.3 /usr/src/linux',
+                 "Linking kernel sources to /usr/src/linux");
+	ex_verbose('tar xvzpf kernbench-0.42.tar.gz -C ' . $dir . '/root', 
+                   "Extracting kernbench workload");
+	ex_verbose('tar xvzpf unixbench-4.1.0.tgz -C ' . $dir . '/root', 
+                   "Extracting unixbench workload");
+	ex_verbose('tar xvzf workload.tar.gz -C ' . $dir . '/var/www/', 
                    "Extracting www workload");
         ex_quiet('chmod 777 -R ' . $dir  . '/var/www/*',
                  "Setting permissions on /var/www");
