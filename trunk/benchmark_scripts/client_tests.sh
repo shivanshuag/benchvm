@@ -7,7 +7,7 @@ bash iozone_test.sh
 
 echo "Starting CPU/System Tests"
 echo "========================="
-bash kernbench_test.sh
+#bash kernbench_test.sh
 bash unixbench_test.sh
 
 echo "Starting Networking Tests"
