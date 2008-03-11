@@ -18,5 +18,7 @@ echo -n "* Starting random sync test..."
 iozone -RabKo $loc/iozone_results/default.wks
 echo "Done"
 
-echo "Finished Tests
+echo "Finished Tests"
+
+
 
