@@ -3,7 +3,6 @@
 loc=~/netperf_results
 mkdir -p $loc
 
-clear
 echo "Starting netperf local Tests"
 echo "============================"
 
