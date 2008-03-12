@@ -1,0 +1,28 @@
+Using uid:0, gid:0.
+name,file_size,putc,putc_cpu,put_block,put_block_cpu,rewrite,rewrite_cpu,getc,getc_cpu,get_block,get_block_cpu,seeks,seeks_cpu,num_files,seq_create,seq_create_cpu,seq_stat,seq_stat_cpu,seq_del,seq_del_cpu,ran_create,ran_create_cpu,ran_stat,ran_stat_cpu,ran_del,ran_del_cpu
+Writing with putc()...done
+Writing intelligently...done
+Rewriting...done
+Reading with getc()...done
+Reading intelligently...done
+start 'em...done...done...done...
+Create files in sequential order...done.
+Stat files in sequential order...done.
+Delete files in sequential order...done.
+Create files in random order...done.
+Stat files in random order...done.
+Delete files in random order...done.
+benchvm-foo2,7780M,39931,55,39064,8,19206,3,42343,52,42767,4,157.3,0,1,1454,4,+++++,+++,1295,3,1372,1,+++++,+++,799,4
+Writing with putc()...done
+Writing intelligently...done
+Rewriting...done
+Reading with getc()...done
+Reading intelligently...done
+start 'em...done...done...done...
+Create files in sequential order...done.
+Stat files in sequential order...done.
+Delete files in sequential order...done.
+Create files in random order...done.
+Stat files in random order...done.
+Delete files in random order...done.
+benchvm-foo2,7780M,39897,56,38680,8,19045,3,42620,52,42769,4,150.4,0,1,1413,4,+++++,+++,1294,2,1393,5,+++++,+++,750,2

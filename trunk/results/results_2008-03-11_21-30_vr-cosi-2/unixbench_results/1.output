@@ -1,0 +1,79 @@
+make: *** No rule to make target `check'.  Stop.
+make: *** No rule to make target `all'.  Stop.
+cd: 104: can't cd to /root/benchmark_scripts/pgms
+cd: 111: can't cd to /root/benchmark_scripts/pgms
+cd: 116: can't cd to /root/benchmark_scripts/tmp
+cd: 121: can't cd to /root/benchmark_scripts/results
+cd: 128: can't cd to /root/benchmark_scripts/testdir
+cat: /root/benchmark_scripts/unixbench.logo: No such file or directory
+
+Dhrystone 2 using register variables  1 2 3 4 5 6 7 8 9 10/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Double-Precision Whetstone  1 2 3 4 5 6 7 8 9 10/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+System Call Overhead  1 2 3 4 5 6 7 8 9 10/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Pipe Throughput  1 2 3 4 5 6 7 8 9 10/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Pipe-based Context Switching  1 2 3 4 5 6 7 8 9 10/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Process Creation  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Execl Throughput  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Filesystem Throughput 1024 bufsize 2000 maxblocks  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Filesystem Throughput 256 bufsize 500 maxblocks  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Filesystem Throughput 4096 bufsize 8000 maxblocks  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Shell Scripts (1 concurrent)  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+Shell Scripts (8 concurrent)  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+Shell Scripts (16 concurrent)  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Arithmetic Test (type = short)  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Arithmetic Test (type = int)  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Arithmetic Test (type = long)  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Arithmetic Test (type = float)  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Arithmetic Test (type = double)  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Arithoh  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+C Compiler Throughput  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Dc: sqrt(2) to 99 decimal places  1/root/unixbench-4.1.0/Run: 1: cannot open dc.dat: No such file
+ 2/root/unixbench-4.1.0/Run: 1: cannot open dc.dat: No such file
+ 3/root/unixbench-4.1.0/Run: 1: cannot open dc.dat: No such file
+/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+
+Recursion Test--Tower of Hanoi  1 2 3/root/unixbench-4.1.0/Run: 1: /root/benchmark_scripts/cleanup.sh: not found
+
+/root/unixbench-4.1.0/Run: 525: /root/benchmark_scripts/report.sh: not found
+/root/unixbench-4.1.0/Run: 526: /root/benchmark_scripts/index.sh: not found
+
+==============================================================
