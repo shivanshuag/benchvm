@@ -321,6 +321,7 @@ sub run_modify_filesystem {
                  "Setting owner on /var/www");
         ex_quiet('chgrp root -R ' . $dir  . '/var/www/*',
                  "Setting group on /var/www");
+	ex_verbose('tar xvf stresstest-030708.tar -C ' . $dir . '/root', "Extracting stress tests");
 
   }
 }
