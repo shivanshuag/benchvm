@@ -28,12 +28,14 @@ my $network_script = './qemu-ifup';
 my $kvm = 0;
 my $xen = 0;
 my $watch = 0;
+my $graphics = 0;
 
 GetOptions ('h|help' => \$help,
             'x|xen' => \$xen,
             'k|kvm' => \$kvm,
             'm|memory=i' => \$mem,
             'w|watch' => \$watch,
+	    'g|graphics' => \$graphics,
             'v' => \$verbose);
 
 # Display help
@@ -158,7 +160,10 @@ sub start_image_kvm {
   $cmd .= ' -append "root=UUID=' . $root_uuid . ' console=tty0 console=ttyS0,115200n8"';
   $cmd .= ' -net nic,vlan=0,macaddr=' . $mac_base . sprintf("%02x",$num);
   $cmd .= ' -net tap,vlan=0,ifname=tap' . $num . ',script='.$network_script;
-  $cmd .= ' -nographic';
+  
+  if(!($graphics)) {
+    $cmd .= ' -nographic';
+  }
   if (!($watch)) {
     $cmd .= ' -daemonize';
   }
