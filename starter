@@ -45,6 +45,7 @@ if($help || ($#ARGV+1) != 2 || ($xen == $kvm)){
   print "  -k\t\t\t\tkvm\n";
   print "  -x\t\t\t\txen\n";
   print "  -m\t\t\t\tmemory in MB\n";
+  print "  -g\t\t\t\tgraphics
   print "  -v\t\t\t\tverbose\n";
   print "  -h --help\t\t\t\t\tThis.\n";
   exit(1);
