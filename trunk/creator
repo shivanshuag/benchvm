@@ -304,6 +304,13 @@ sub run_modify_filesystem {
            "Removing persistant net rules");
   ex_quiet('rm -rf ' . $dir  . '/var/www/*',
            "Removing exsisting /var/www/* files");
+
+  $kernel_ver = `uname -r`;
+  chomp($kernel_ver);
+  ex_verbose('cp -ra /lib/modules/' . $kernel_ver . " " . $dir . '/lib/modules', "copying kernel modules");
+
+
+
   if ($www_workload) {
         ex_verbose('tar xvjpf linux-2.6.24.3.tar.bz2 -C ' . $dir . '/usr/src', 
                    "Extracting kernel sources");
