@@ -305,7 +305,7 @@ sub run_modify_filesystem {
   ex_quiet('rm -rf ' . $dir  . '/var/www/*',
            "Removing exsisting /var/www/* files");
 
-  $kernel_ver = `uname -r`;
+  my $kernel_ver = `uname -r`;
   chomp($kernel_ver);
   ex_verbose('cp -ra /lib/modules/' . $kernel_ver . " " . $dir . '/lib/modules', "copying kernel modules");
 
