@@ -1,0 +1,44 @@
+<!--
+  This is the Benchvm Manifest 1.0 DTD.
+-->
+<!--
+Typical Usage:
+
+  <?xml version="1.0" encoding="UTF-8"?>
+  <!DOCTYPE manifest PUBLIC
+  "http://benchvm.googlecode.com/svn/trunk/dtds/1.0/manifest.dtd">
+  <manifest>
+    <testset>
+      <machine ip="..." type="... ...">      
+        <test name="..." arguments="... ..." />
+        ...
+        <domain ip="..." type="... ...">
+          <test name="..." arguments="... ..." />
+          ...
+        </domain>
+          ...
+      </machine>
+      ...
+    </testset>
+    ...
+  </manifest>
+-->
+
+<!ELEMENT manifest (testset+)>
+<!ELEMENT testset (machine+)>
+<!ELEMENT machine (test*,domain*)>
+<!ATTLIST machine
+          ip CDATA #REQUIRED
+          type CDATA #IMPLIED
+>
+<!ELEMENT domain (test*)>
+<!ATTLIST domain
+          ip CDATA #REQUIRED
+          type CDATA #IMPLIED
+>
+<!ELEMENT test EMPTY>
+<!ATTLIST domain
+          name CDATA #REQUIRED
+          arguments CDATA #IMPLIED
+>
+
