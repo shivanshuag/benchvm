@@ -8,7 +8,7 @@ Typical Usage:
   <!DOCTYPE manifest SYSTEM
   "http://benchvm.googlecode.com/svn/trunk/dtds/1.0/manifest.dtd">
   <manifest>
-    <testset>
+    <testset name="...">
       <machine ip="..." type="... ...">      
         <test name="..." arguments="... ..." />
         ...
@@ -26,6 +26,9 @@ Typical Usage:
 
 <!ELEMENT manifest (testset+)>
 <!ELEMENT testset (machine+)>
+<!ATTLIST testset
+          name CDATA #IMPLIED
+>
 <!ELEMENT machine (test*,domain*)>
 <!ATTLIST machine
           ip CDATA #REQUIRED

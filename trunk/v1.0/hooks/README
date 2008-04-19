@@ -1,0 +1,20 @@
+on-end
+  called with: manifest_path
+on-start
+  called with: manifest_path
+on-test-end
+  called with: test_name test_arguments [machine_ip|domain_ip]
+on-test-fail
+  called with: test_name test_arguments [machine_ip|domain_ip]
+on-testset-end
+  called with: testset_name
+on-testset-fail
+  called with: testset_name
+on-testset-start
+  called with: testset_name
+on-testset-success
+  called with: testset_name
+on-test-start
+  called with: test_name test_arguments [machine_ip|domain_ip]
+on-test-sucess
+  called with: test_name test_arguments [machine_ip|domain_ip]
