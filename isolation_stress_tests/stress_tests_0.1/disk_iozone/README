@@ -1,0 +1,10 @@
+tar xvf iozone3_257.tar
+cd iozone3_257/src/current
+make <platform>
+
+copy iozone binary to same directory as run_iozone.sh
+make sure your hostnames are unique
+
+cd to directory with the run_iozone.sh and iozone files 
+
+./run_iozone.sh
