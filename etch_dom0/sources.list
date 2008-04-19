@@ -1,4 +1,0 @@
-deb http://ftp.debian.org/debian/ etch main contrib
-deb http://security.debian.org/ etch/updates main contrib
-deb-src http://security.debian.org/ etch/updates main contrib
-deb http://ftp.debian.org/debian/ unstable main
