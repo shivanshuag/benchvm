@@ -5,7 +5,7 @@
 Typical Usage:
 
   <?xml version="1.0" encoding="UTF-8"?>
-  <!DOCTYPE manifest PUBLIC
+  <!DOCTYPE manifest SYSTEM
   "http://benchvm.googlecode.com/svn/trunk/dtds/1.0/manifest.dtd">
   <manifest>
     <testset>
@@ -37,7 +37,7 @@ Typical Usage:
           type CDATA #IMPLIED
 >
 <!ELEMENT test EMPTY>
-<!ATTLIST domain
+<!ATTLIST test
           name CDATA #REQUIRED
           arguments CDATA #IMPLIED
 >
