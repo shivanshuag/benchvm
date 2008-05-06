@@ -1,0 +1,5 @@
+executable file to be run on a base install
+installs all packages necessary to work as advertised
+naming convention:
+  base-distro-to-install-on_hypervisors-it-supports
+  e.g "ubuntu-hardy_kvm-xen"

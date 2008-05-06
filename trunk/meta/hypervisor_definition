@@ -1,0 +1,5 @@
+defines a hypervisor in terms of possible machine and guest definitions
+
+naming convention:
+  hypervisor-name
+  e.g. "xen"
