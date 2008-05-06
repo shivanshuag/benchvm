@@ -1,0 +1,13 @@
+executable file to be run to manage guests (called from hypervisor definition)
+  create [[low] high] [more here?] (default: low:0 high:1)
+    create a number of guests with the given parameters
+  start [[low] high] (default: low:0 high:max)
+    start the guests within the given id range
+  stop [[low] high] (default: low:0 high:max)
+    stop the guests within the given id range
+  clean [[low] high] (default: low:0 high:max)
+    clean the guests within the given id range
+
+naming convention:
+  hypervisor-name_storage-technology
+  e.g. "xen_dd-file"
