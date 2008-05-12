@@ -12,7 +12,7 @@ Typical Usage:
       <machine ip="..." type="... ...">      
         <test name="..." arguments="... ..." />
         ...
-        <domain ip="..." type="... ...">
+        <domain ip="..." type="... ..." specifications="...">
           <test name="..." arguments="... ..." />
           ...
         </domain>
@@ -38,6 +38,7 @@ Typical Usage:
 <!ATTLIST domain
           ip CDATA #REQUIRED
           type CDATA #IMPLIED
+          specifications CDATA #REQUIRED
 >
 <!ELEMENT test EMPTY>
 <!ATTLIST test

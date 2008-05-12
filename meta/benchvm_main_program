@@ -1,0 +1,12 @@
+Arguments: a manifest file
+
+What it would do (ver .1):
+  Parse the manifest file.
+  For each test set:
+    Determine the machine/guest setup required (making sure passwordless key-based authentication exisists.. probably a requirement in the guest definition)
+    Use machine and guest definitions to create that setup
+    create enoguh forks/threads to run all tests in the test set
+    start all tests at the same time
+
+Thinks to keep in mind for the future:
+  Hooks!
