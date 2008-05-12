@@ -1,5 +1,5 @@
-executable file to be run to manage guests (called from hypervisor definition)
-  create [[low] high] [more here?] (default: low:0 high:1)
+executable file to be run to manage guests (called from hypervisor definition - first argument is a guest xml definition)
+  create [[low] high] (default: low:0 high:1)
     create a number of guests with the given parameters
   start [[low] high] (default: low:0 high:max)
     start the guests within the given id range
