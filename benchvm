@@ -1,0 +1,9 @@
+#!/bin/bash
+
+num_images=4
+
+#create pristine guest image
+./creator -v -d hardy -f 4096  -w -v xen-guest
+
+#provision images
+./creator -p ${num_images} -v
