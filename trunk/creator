@@ -1,0 +1,462 @@
+#!/usr/bin/perl
+#Dependencies:
+#dd
+#losetup
+#mkdir
+#mount
+#debootstrap
+#umount
+#rmdir
+
+use strict;
+use warnings;
+use Getopt::Long;
+Getopt::Long::Configure ('bundling');
+
+#Check to make sure user is root
+my $user = `whoami`;
+chomp $user;
+if($user ne 'root'){
+  print 'Superuser privileges are necessary for some parts of this script; ';
+  print 'use sudo.' . "\n";
+  exit(1);
+}
+
+#################
+#  Global Vars  #
+#################
+
+#General
+my $provision = 0;
+my $verbose = 0;
+my $www_workload = 0;
+my $help;
+my $count = 4;
+my $location = './';
+my $uuid = 'test';
+my $dev_device = 0;
+my $clean = 0;
+my $swap_size_mb = 128;
+my $free_size_mb = 128;  
+my $is_mounted = 0;
+my $base_ip='192.168.133';
+my $guest_script_dir = '/root/benchvm';
+my $local_script_dir = './benchmark_scripts';
+
+#Debootstrap Options
+my $arch = 0;
+my $apt_include = 'openssh-server,iozone3,bonnie++,apache2,libapache2-mod-php5,build-essential,netperf,time';
+my $apt_exclude = 'initramfs-tools';
+my $distro = 'gutsy';
+my $mirror = 0;
+my $guest_scripts = 0;
+
+
+#DD Config Options
+my $dd_bs = 1024*1024;
+
+GetOptions ('a|arch=s' => \$arch,
+            'd|distro=s' => \$distro,
+            'l|location=s' => \$location,
+            'm|mirror=s' => \$mirror,
+            'f|free=i' => \$free_size_mb,
+            'w|workload' => \$www_workload,
+            's|scripts' => \$guest_scripts,
+            'h|help' => \$help,
+            'v' => \$verbose,
+            'p|provision=i' => \$provision,
+            'c|clean' => \$clean);
+
+# Display help
+if($help || ($#ARGV+1) != 1){
+  print 'Usage: [options] imagename' . "\n";
+  print "  -a [arch], --arch [arch]\t\t\tArchitecture to Install\n";
+  print "  -d [distro], --distro [distro]\t\tDistro to Install\n";
+  print "  -l [location], --location [location]\t\tLocation to Create IMGs\n";
+  print "  -m [mirror], --mirror [mirror]\t\tMirror to Intall from\n";
+  print "  --ddbs [size]\t\t\t\t\tBS for DD command\n";
+  print "  --clean\t\t\t\tclean old image build\n";
+  print "  -v\t\t\t\tverbose\n";
+  print "  -h --help\t\t\t\t\tThis.\n";
+  exit(1);
+}
+#Parse Command Line vars after options
+$uuid = $ARGV[0];
+my $img_name = $uuid . '-pristine.img';
+my $mount_dir = $location . 'mnt-' . $uuid;
+my $dbs_dir = $location . 'tmp-' . $uuid;
+my $provision_dir = $location . 'img-' . $uuid;
+
+#################
+#  Subroutines  #
+#################
+
+#Log File
+my $logfilename="creator.log.$uuid";
+open(LOGFILE, ">$logfilename") or die("Unable to open logfile: $logfilename");
+
+#Log to stdout & logfile, don't quit
+sub log_info {
+  print LOGFILE "$_[0]\n";
+  print "$_[0]\n";
+}
+
+#Log to stdout & logfile, then die
+sub log_fatal {
+  print LOGFILE "$_[0]\n";
+  print "$_[0]\n";
+  clean_env();
+  exit(1); #Epic fail.
+}
+
+#Write an rc.local file for our guest filesystem
+sub write_rclocal {
+  my($rclocal) = @_;
+  open (RCLOCAL, ">$rclocal") or log_fatal("Unable to open guest /etc/rc.local");
+  print RCLOCAL "#!/bin/bash\n";
+  print RCLOCAL "BASEIP=$base_ip\n";
+  #Get the last two hex digits of our MAC, convert to decimal. 
+  print RCLOCAL "let DEC=0x`ifconfig eth0 | grep HWaddr | sed 's/.*..:..:..:..:..://'`\n";
+  print RCLOCAL "LASTDIGITS=\$((\$DEC+100))\n";
+  #Set /etc/network/interfaces with a static IP
+  print RCLOCAL "echo \"auto lo\"> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"iface lo inet loopback\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"auto eth0\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"iface eth0 inet static\">> /etc/network/interfaces\n";
+  #Use the decimal value we calculated earlier here.
+  print RCLOCAL "echo \"  address \${BASEIP}.\${LASTDIGITS}\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"  netmask 255.255.255.0\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"  broadcast \${BASEIP}.0\">> /etc/network/interfaces\n";
+  #Set a hostname
+  print RCLOCAL "echo \"benchvm\${DEC}\" > /etc/hostname\n";
+  print RCLOCAL "hostname -F /etc/hostname\n";
+  #Set /etc/hosts
+  print RCLOCAL "echo \"127.0.0.1 localhost\" > /etc/hosts\n";
+  print RCLOCAL "echo \"127.0.1.1 benchvm\${DEC}\" >> /etc/hosts\n";
+  #Restart network, ssh, apache
+  print RCLOCAL "/etc/init.d/networking restart\n";
+  print RCLOCAL "/etc/init.d/ssh restart\n";
+  print RCLOCAL "/etc/init.d/apache2 restart\n";
+  print RCLOCAL "exit 0\n";
+  close RCLOCAL;
+}
+
+#Write /etc/event.d/ttyS0, so we can have serial access in kvm
+sub write_getty {
+  my($path) = @_;
+  open (GETTY, ">$path") or log_fatal("Unable to open guest /etc/event.d/ttyS0");
+  print GETTY "start on runlevel 2\n";
+  print GETTY "start on runlevel 3\n";
+  print GETTY "start on runlevel 4\n";
+  print GETTY "start on runlevel 5\n";
+  print GETTY "stop on runlevel 0\n";
+  print GETTY "stop on runlevel 1\n";
+  print GETTY "stop on runlevel 6\n";
+  print GETTY "respawn\n";
+  print GETTY "exec /sbin/getty 115200 ttyS0\n";
+  close GETTY;
+}
+
+#Use the volume UUIDs for the image to set /etc/fstab on the guest filesystem
+sub write_fstab {
+  my($fstab, $root_uuid, $swap_uuid) = @_;
+  open (FSTAB, ">$fstab") or log_fatal("Unable to open guest /etc/fstab");
+  print FSTAB "proc\t/proc\tproc\tdefaults\t0\t0\n";
+  print FSTAB "UUID=" . $root_uuid . "\t/\text3\tdefaults,errors=remount-ro\t0\t1\n";
+  print FSTAB "UUID=" . $swap_uuid . "\tnone\tswap\tsw\t0\t0\n";
+  close FSTAB;
+}
+
+#Run a shell command
+#Will not log std out/err unless return code != 0
+#Returns the contents of std out/err
+#Will die on return code != 0, unless flag $do_not_die is set
+sub ex_quiet {
+  my($command,$description,$do_not_die) = @_;
+  if ($description) {
+    log_info("TASK: $description");
+  }
+  if ($verbose) {
+    log_info("COMMAND: $command");
+  }
+  my $ret = `$command 2>&1`;
+  if ($? != 0) {
+    log_info("OUTPUT: $ret\n");
+    if ($do_not_die) {
+      log_info("ERROR: Return Code $?\n");
+    } else {
+      log_fatal("ERROR: Return Code $?\n");
+    }
+  }
+  chomp($ret);
+  return $ret;
+}
+
+# Run a shell command
+# std out/err go to this processes std out/err
+# Logs on failure.
+sub ex_verbose {
+  my($command,$description) = @_;
+  if ($description) {
+    log_info("TASK: $description");
+  }
+  if ($verbose) { 
+    log_info("COMMAND: $command");
+  }
+  system("$command");
+  if ($? != 0) {
+    log_fatal("ERROR: Return Code $?");
+  }
+}
+
+sub clean_guest() {
+  ex_quiet('rm -rf ' . $dbs_dir,
+           "[CLEAN-GUEST] Removing Deboostrap Directory", 1);
+  ex_quiet('rm -rf ' . $location . $img_name,
+           "[CLEAN-GUEST] Removing Pristine Image", 1);
+  ex_quiet('rm -rf ' . $provision_dir,
+           "[CLEAN-GUEST] Removing Image Directory", 1);
+}
+
+# Clean up directories, mount points etc...
+sub clean_env() {
+  if ($is_mounted) {
+    ex_quiet('umount ' . $mount_dir, "[CLEAN] Unmounting Temporary Directory", 1);
+  }
+  if($dev_device) {
+    ex_quiet('kpartx -dv ' . $dev_device,
+             "[CLEAN] Removing Partition Device Mappings", 1);
+    ex_quiet('losetup -d ' . $dev_device,
+             "[CLEAN] Removing Loopback Device", 1);
+  }
+  if (-e $mount_dir) {
+    ex_quiet('rmdir ' . $mount_dir, "[CLEAN] Removing Temporary Directory", 1);
+  }
+}
+
+# Construct the deboostrap command we will use to create a debian filesystem
+sub mkdebootstrapcommand {
+  my $debootstrapcommand = 'debootstrap ';
+  $debootstrapcommand .= '--components=main,restricted,universe,multiverse ';
+  if ($arch) {
+    $debootstrapcommand .= '--arch ' . $arch . ' ';
+  }
+  if ($apt_include) {
+    $debootstrapcommand .= '--include=' . $apt_include . ' ';
+  }
+  if ($apt_exclude) {
+    $debootstrapcommand .= '--exclude=' . $apt_exclude . ' ';
+  }
+  $debootstrapcommand .= $distro . ' ' . $dbs_dir;
+  if ($mirror) {
+    $debootstrapcommand .= ' ' . $mirror;
+  }
+  return $debootstrapcommand;
+}
+
+
+
+#####################
+#   Run Functions   #
+#####################
+
+sub run_create_filesystem {
+  my($dir) = @_;
+  ex_quiet('mkdir -p ' . $dir, "Creating Temporary Debootstrap Directory");
+  ex_verbose(mkdebootstrapcommand(), "Creating base guest filesystem");
+}
+
+sub run_modify_filesystem {
+  my($dir) = @_;
+  ex_quiet('rm -rf ' . $dir  . '/root/*',
+           "Removing exsisting /root/* files");
+  ex_quiet('rm -rf ' . $dir  . '/usr/src/*',
+           "Removing exsisting /usr/src/* files");
+  ex_quiet('chroot ' . $dir . ' apt-get clean', "Clearing Guest Apt Cache");
+  ex_quiet('echo vmbench> ' . $dir . '/etc/hostname', "Setting Guest Hostname");
+  log_info('TASK: Setting guest\'s /etc/rc.local');
+  write_rclocal($dir . '/etc/rc.local');
+  log_info('TASK: Setting guest\'s /etc/event.d/ttyS0');
+  write_getty($dir . '/etc/event.d/ttyS0');
+  sshkeygen();
+  if(!(-e $dir  . '/root/.ssh')) {
+    ex_quiet('mkdir ' . $dir  . '/root/.ssh', "Creating .ssh dir");
+  }
+  ex_quiet('rm -rf ' . $dir . $guest_script_dir,
+           "Removing current Benchmark Scripts on guest");
+  if($guest_scripts) {
+    if(!(-e $dir  . $guest_script_dir)) {
+      ex_quiet('mkdir ' . $dir  . $guest_script_dir,
+               "Creating benchmark script dir");
+    }
+    ex_quiet('cp -rf ' . $local_script_dir . '/* ' .
+             $dir . $guest_script_dir,
+             "Copying Benchmark Scripts to guest");
+    ex_quiet('chmod 700 -R ' . $dir . $guest_script_dir,
+             "Changing permissions on script directory");
+
+  }
+  ex_quiet('cp /root/.ssh/id_rsa.pub ' . $dir .
+           '/root/.ssh/authorized_keys', 
+           "Copying ssh key");
+  ex_quiet('chmod -R 700 ' . $dir . '/root/.ssh', "Setting ~/.ssh permissions");
+  ex_quiet('rm -f ' . $dir  . '/etc/udev/rules.d/*persistent-net*',
+           "Removing persistant net rules");
+  ex_quiet('rm -rf ' . $dir  . '/var/www/*',
+           "Removing exsisting /var/www/* files");
+
+  my $kernel_ver = `uname -r`;
+  chomp($kernel_ver);
+  ex_verbose('cp -ra /lib/modules/' . $kernel_ver . " " . $dir . '/lib/modules', "copying kernel modules");
+
+
+
+  if ($www_workload) {
+	ex_verbose('./clean_isolation_tests.sh');
+	ex_verbose('./get_isolation_tests.sh');
+
+	ex_verbose('tar xvzf workload.tar.gz -C ' . $dir . '/var/www/', 
+                   "Extracting www workload");
+        ex_quiet('chmod 777 -R ' . $dir  . '/var/www/*',
+                 "Setting permissions on /var/www");
+        ex_quiet('chown root -R ' . $dir  . '/var/www/*',
+                 "Setting owner on /var/www");
+        ex_quiet('chgrp root -R ' . $dir  . '/var/www/*',
+                 "Setting group on /var/www");
+	ex_verbose('tar xvf stresstest-030708.tar -C ' . $dir . '/root', "Extracting stress tests");
+
+  }
+}
+
+sub run_create_image_file {
+  my($img_file, $fs_dir) = @_;
+  my $image_base_size_b = ex_quiet("du -s -b " . $fs_dir, "Getting base image size");
+  $image_base_size_b =~ s/\s.*//g;
+  log_info('INFO: Base image size is: ' . ($image_base_size_b/1024/1024) . 'MB');
+  my $image_size_b = int($image_base_size_b) + (int($swap_size_mb)*1024*1024) + 
+                     (int($free_size_mb)*1024*1024);
+  log_info('INFO: Final image size will be: ' . ($image_size_b/1024/1024) . 'MB');
+  ex_quiet('dd if=/dev/zero of=' . $img_file . ' ' . 'bs=' . 
+           $dd_bs . ' count=' . int($image_size_b/$dd_bs),
+           "Creating image file");
+  ex_quiet('parted --script ' . $img_file . ' mklabel msdos',
+           "Making Partition Label");
+  ex_quiet('parted --script ' . $img_file . ' mkpart primary linux-swap 0 ' .
+           $swap_size_mb,
+           "Making Swap Partition");
+  ex_quiet('parted --script ' . $img_file . ' mkpart primary ext2 ' .
+           $swap_size_mb . ' ' . ($image_size_b/1024/1024),
+           "Making Root Partition");
+}
+
+# Create ssh key if nessicary
+sub sshkeygen {
+  if (-e "/root/.ssh/id_rsa.pub") {
+    log_info("Found old ssh key, skipping keygen");
+  } else {
+    ex_quiet('ssh-keygen -t rsa -q -f /root/.ssh/id_rsa -N \'\'',
+             "Generating SSH keys");
+  }
+}
+
+# Map the image partitions to /dev devices
+my $dev_root_partition;
+my $dev_swap_partition;
+sub run_map_image {
+  my($img_file)=@_;
+  $dev_device = ex_quiet('losetup -f', "Getting Free Loopback Device");
+  log_info('INFO: Found free loopback device: ' . $dev_device);
+  ex_quiet('losetup ' . $dev_device . ' ' . $img_file,
+           "Creating Loopback Block Device");
+  ex_quiet('kpartx -av ' . $dev_device, "Creating Partition Device Mappings");
+  my $dev_device_num = $dev_device;
+  $dev_device_num =~ s/.*\/loop//g;
+  $dev_swap_partition = '/dev/mapper/loop' . $dev_device_num . 'p1';
+  $dev_root_partition = '/dev/mapper/loop' . $dev_device_num . 'p2';
+}
+
+# Format the partitions
+sub run_format_image {
+  ex_quiet('mkswap ' . $dev_swap_partition, "Formatting Swap Partition");
+  ex_quiet('mkfs.ext3 ' . $dev_root_partition, "Formatting Root Partition");
+}
+
+# Get the UUIDs of the mapped partitions
+my $uuid_swap;
+my $uuid_root;
+sub run_get_partition_uuids {
+  $uuid_swap = ex_quiet('blkid -s UUID ' . $dev_swap_partition, "Obtaining swap UUID");
+  $uuid_swap =~ s/.*UUID="//g;
+  $uuid_swap =~ s/"//g;
+  log_info('INFO: Found swap UUID: ' . $uuid_swap);
+  $uuid_root = ex_quiet('blkid -s UUID ' . $dev_root_partition, "Obtaining root UUID");
+  $uuid_root =~ s/.*UUID="//g;
+  $uuid_root =~ s/"//g;
+  log_info('INFO: Found root UUID: ' . $uuid_root);
+}
+
+# Copy the file system into the image
+sub run_copy_fs_to_image {
+  my($local_root, $tmp_mount_dir)=@_;
+  log_info('TASK: Setting guest\'s /etc/fstab');
+  write_fstab($local_root . '/etc/fstab', $uuid_root, $uuid_swap);
+  ex_quiet('mkdir -p ' . $tmp_mount_dir, "Creating Temporary Mount Directory");
+  ex_quiet('mount ' . $dev_root_partition . ' ' . $tmp_mount_dir,
+           "Mounting Loopback Device");
+  $is_mounted = 1;
+  ex_verbose('(cd ' . $local_root  . ';tar lcf - .)|(cd ' .
+             $tmp_mount_dir . '; tar xpvf - )',
+             "Copying Filesystem to guest image");
+}
+
+# Copy the pristine image a certain number of times
+# to a folder that will house guest images
+sub provision_image {
+  my($img_file, $img_dir, $img_count)=@_;
+  if (-e $img_dir) {
+    log_info('TASK: Found image directory, skipping mkdir');
+  } else {
+    ex_quiet('mkdir -p ' . $img_dir, "Creating image directory");
+  }
+  for (my $x=0; $x < $img_count; $x++) {
+    ex_quiet('cp -f ' . $img_file  . ' ' . $img_dir . '/image-' . $x . '.img',
+             'Copying Image ' . $x);
+  }
+}
+
+###########
+#   Run   #
+###########
+
+
+
+if($clean) {
+  clean_guest();
+  exit(0);
+}
+
+if (-e $dbs_dir) {
+  log_info("INFO: Found old Debootstrap Directory, skipping debootstrap");
+} else {
+  run_create_filesystem($dbs_dir);
+}
+
+if (-e $location . $img_name) {
+  log_info("INFO: Found old image file, skipping image creation");
+} else {
+  run_modify_filesystem($dbs_dir);
+  run_create_image_file($location . $img_name, $dbs_dir);
+  run_map_image($location . $img_name);
+  run_format_image();
+  run_get_partition_uuids();
+  run_copy_fs_to_image($dbs_dir, $mount_dir);
+}
+
+clean_env();
+
+if($provision) {
+  provision_image($location . $img_name, $provision_dir, $provision);
+  exit(0);
+}
+
+
