@@ -6,4 +6,4 @@ num_images=4
 ./creator -v -d hardy -f 4096  -w -v xen-guest
 
 #provision images
-./creator -p ${num_images} -v
+./creator -p ${num_images} -v xen-guest
