@@ -1,0 +1,10 @@
+CPU Stress Test
+
+Integer calculations
+
+*******Build******* 
+make
+
+*******Run*******
+./cpu_stress_test
+
