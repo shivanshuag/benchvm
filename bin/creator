@@ -16,16 +16,14 @@ Getopt::Long::Configure ('bundling');
 
 #check dependencies
 
-my $has_debootstrap = `which debootstrap`;
-chomp($has_debootstrap);
-if($has_debootstrap != 0)
+system("which debootstrap");
+if($? != 0)
 {
   print "package debootstrap required";
   exit(1);
 }
-my $has_kpartx = `which kpartx`;
-chomp($has_kpartx);
-if($has_kpartx != 0)
+system("which kpartx");
+if($? != 0)
 {
   print "package kpartx required";
   exit(1);
