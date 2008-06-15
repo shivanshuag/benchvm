@@ -7,6 +7,7 @@
 #debootstrap
 #umount
 #rmdir
+#kpartx
 
 use strict;
 use warnings;
@@ -29,27 +30,32 @@ if($user ne 'root'){
 #General
 my $provision = 0;
 my $verbose = 0;
-my $www_workload = 0;
 my $help;
 my $count = 4;
 my $location = './';
 my $uuid = 'test';
 my $dev_device = 0;
 my $clean = 0;
-my $swap_size_mb = 128;
-my $free_size_mb = 128;  
+my $swap_size_mb = 512;
+my $free_size_mb = 4096;  
 my $is_mounted = 0;
-my $base_ip='192.168.133';
-my $guest_script_dir = '/root/benchvm';
-my $local_script_dir = './benchmark_scripts';
+my $base_ip = '192.168.133';
+my $install_dir = '/root/devel/benchvm/';
+
+#specweb workload
+my $specweb_workload = 0;
+
+#isolation suite
+my $guest_isolation_suite_dir = '/root/isolation/';
+my $isolation_suite = 0;
 
 #Debootstrap Options
 my $arch = 0;
-my $apt_include = 'openssh-server,iozone3,bonnie++,apache2,libapache2-mod-php5,build-essential,netperf,time,screen';
+my $apt_include = 'openssh-server,apache2,libapache2-mod-php5,build-essential,php5-cli,php5-gd,time,screen';
 my $apt_exclude = 'initramfs-tools';
-my $distro = 'gutsy';
+my $distro = 'hardy';
 my $mirror = 0;
-my $guest_scripts = 0;
+
 
 
 #DD Config Options
@@ -60,21 +66,24 @@ GetOptions ('a|arch=s' => \$arch,
             'l|location=s' => \$location,
             'm|mirror=s' => \$mirror,
             'f|free=i' => \$free_size_mb,
-            'w|workload' => \$www_workload,
-            's|scripts' => \$guest_scripts,
-            'h|help' => \$help,
-            'v' => \$verbose,
+            'w|workload' => \$specweb_workload,
+            'i|isolation' => \$isolation_suite,
             'p|provision=i' => \$provision,
-            'c|clean' => \$clean);
+            'c|clean' => \$clean,
+            'v' => \$verbose,
+            'h|help' => \$help);
 
 # Display help
 if($help || ($#ARGV+1) != 1){
   print 'Usage: [options] imagename' . "\n";
-  print "  -a [arch], --arch [arch]\t\t\tArchitecture to Install\n";
-  print "  -d [distro], --distro [distro]\t\tDistro to Install\n";
-  print "  -l [location], --location [location]\t\tLocation to Create IMGs\n";
-  print "  -m [mirror], --mirror [mirror]\t\tMirror to Intall from\n";
-  print "  --ddbs [size]\t\t\t\t\tBS for DD command\n";
+  print "  -a <arch>, --arch <arch>\t\t\tArchitecture to Install\n";
+  print "  -d <distro>, --distro <distro>\t\tDistro to Install\n";
+  print "  -l <location>, --location <location>\t\tLocation to Create images\n";
+  print "  -m <mirror>, --mirror <mirror>\t\tMirror to Intall from\n";
+  print "  -f <free space>, --f <free space>\t\tFree space in created images\n";
+  print "  -w, --workload\t\tGet www workload for specweb, include in images\n";
+  print "  -i, --isolation\t\tInclude isolation suite in the image\n";
+  print "  -p <num>, --provision <num>\t\tProvision <num> copies of previously created image\n";
   print "  --clean\t\t\t\tclean old image build\n";
   print "  -v\t\t\t\tverbose\n";
   print "  -h --help\t\t\t\t\tThis.\n";
@@ -273,7 +282,7 @@ sub run_modify_filesystem {
   ex_quiet('rm -rf ' . $dir  . '/usr/src/*',
            "Removing exsisting /usr/src/* files");
   ex_quiet('chroot ' . $dir . ' apt-get clean', "Clearing Guest Apt Cache");
-  ex_quiet('echo vmbench> ' . $dir . '/etc/hostname', "Setting Guest Hostname");
+  ex_quiet('echo benchvm> ' . $dir . '/etc/hostname', "Setting Guest Hostname");
   log_info('TASK: Setting guest\'s /etc/rc.local');
   write_rclocal($dir . '/etc/rc.local');
   log_info('TASK: Setting guest\'s /etc/event.d/ttyS0');
@@ -282,19 +291,16 @@ sub run_modify_filesystem {
   if(!(-e $dir  . '/root/.ssh')) {
     ex_quiet('mkdir ' . $dir  . '/root/.ssh', "Creating .ssh dir");
   }
-  ex_quiet('rm -rf ' . $dir . $guest_script_dir,
-           "Removing current Benchmark Scripts on guest");
-  if($guest_scripts) {
-    if(!(-e $dir  . $guest_script_dir)) {
-      ex_quiet('mkdir ' . $dir  . $guest_script_dir,
-               "Creating benchmark script dir");
-    }
-    ex_quiet('cp -rf ' . $local_script_dir . '/* ' .
-             $dir . $guest_script_dir,
-             "Copying Benchmark Scripts to guest");
-    ex_quiet('chmod 700 -R ' . $dir . $guest_script_dir,
-             "Changing permissions on script directory");
+  ex_quiet('rm -rf ' . $dir . $guest_isolation_suite_dir,
+           "Removing current isolation suite on guest");
 
+  if($isolation_suite) {
+    ex_quiet('mkdir -p ' . $dir . $guest_isolation_suite_dir, "create isolation suite directory");
+    ex_quiet('cp -rf ' . $install_dir . '/isolation/* ' .
+             $dir . $guest_isolation_suite_dir,
+             "Copying isolation suite to guest");
+    ex_quiet('chmod 700 -R ' . $dir . $guest_isolation_suite_dir,
+             "Changing permissions on isolation suite directory");
   }
   ex_quiet('cp /root/.ssh/id_rsa.pub ' . $dir .
            '/root/.ssh/authorized_keys', 
@@ -304,16 +310,12 @@ sub run_modify_filesystem {
            "Removing persistant net rules");
   ex_quiet('rm -rf ' . $dir  . '/var/www/*',
            "Removing exsisting /var/www/* files");
-
   my $kernel_ver = `uname -r`;
   chomp($kernel_ver);
   ex_verbose('cp -ra /lib/modules/' . $kernel_ver . " " . $dir . '/lib/modules', "copying kernel modules");
-
-
-
-  if ($www_workload) {
-	ex_verbose('./clean_isolation_tests.sh');
-	ex_verbose('./get_isolation_tests.sh');
+  if ($specweb_workload) {
+	ex_verbose($install_dir . 'bin/clean_workload.sh');
+	ex_verbose($install_dir . 'bin/get_workload.sh');
 
 	ex_verbose('tar xvzf workload.tar.gz -C ' . $dir . '/var/www/', 
                    "Extracting www workload");
@@ -323,8 +325,6 @@ sub run_modify_filesystem {
                  "Setting owner on /var/www");
         ex_quiet('chgrp root -R ' . $dir  . '/var/www/*',
                  "Setting group on /var/www");
-	ex_verbose('tar xvf stresstest-030708.tar -C ' . $dir . '/root', "Extracting stress tests");
-
   }
 }
 
