@@ -16,16 +16,16 @@ Getopt::Long::Configure ('bundling');
 
 #check dependencies
 
-system("which debootstrap");
+system("which debootstrap > /dev/null 2>&1");
 if($? != 0)
 {
-  print "package debootstrap required";
+  print "package debootstrap required.\nexiting.\n";
   exit(1);
 }
-system("which kpartx");
+system("which kpartx > /dev/null 2>&1");
 if($? != 0)
 {
-  print "package kpartx required";
+  print "package kpartx required.\nexiting.\n";
   exit(1);
 }
 #Check to make sure user is root
