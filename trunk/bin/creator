@@ -14,6 +14,20 @@ use warnings;
 use Getopt::Long;
 Getopt::Long::Configure ('bundling');
 
+#check dependencies
+
+my $has_debootstrap = `which debootstrap`;
+if($has_debootstrap != 0)
+{
+  print "package debootstrap required";
+  exit(1);
+}
+my $has_kpartx = `which kpartx`;
+if($has_kpartx != 0)
+{
+  print "package kpartx required";
+  exit(1);
+}
 #Check to make sure user is root
 my $user = `whoami`;
 chomp $user;
