@@ -188,7 +188,8 @@ sub ex_quiet {
   if ($verbose) {
     log_info("COMMAND: $command");
   }
-  my $ret = `$command 2>&1`;
+  my $ret = "none"
+  $ret = `$command 2>&1`;
   if ($? != 0) {
     log_info("OUTPUT: $ret\n");
     if ($do_not_die) {
