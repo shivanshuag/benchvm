@@ -332,7 +332,7 @@ sub run_modify_filesystem {
 	ex_verbose($install_dir . 'bin/clean_workload.sh');
 	ex_verbose($install_dir . 'bin/get_workload.sh');
 
-	ex_verbose('tar xvzf workload.tar.gz -C ' . $dir . '/var/www/', 
+	ex_verbose('tar xzf workload.tar.gz -C ' . $dir . '/var/www/', 
                    "Extracting www workload");
         ex_quiet('chmod 777 -R ' . $dir  . '/var/www/*',
                  "Setting permissions on /var/www");
@@ -420,7 +420,7 @@ sub run_copy_fs_to_image {
            "Mounting Loopback Device");
   $is_mounted = 1;
   ex_verbose('(cd ' . $local_root  . ';tar lcf - .)|(cd ' .
-             $tmp_mount_dir . '; tar xpvf - )',
+             $tmp_mount_dir . '; tar xpf - )',
              "Copying Filesystem to guest image");
 }
 
