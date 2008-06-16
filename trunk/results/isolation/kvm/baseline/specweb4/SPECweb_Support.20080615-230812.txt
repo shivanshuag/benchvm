@@ -1,0 +1,314 @@
+                           SPECweb2005 Support Result                           
+
+================================================================================
+                                                        ||
+Ultimate Computers: Model 1                             ||     Invalid Run!     
+SoFast Software: WebStreaker v1.0 (23-bit)              ||
+SoFast Software: JSP Servlet Engine v1.0                ||
+                                                        ||
+================================================================================
+
+Submitter: Speedy Systems, Pomona, SPEC License #: 0, Test date: Jun-2008
+
+================================================================================
+
+PERFORMANCE
+
+     | Simultaneous  |   Test    | Aggregate QOS Compliance  | Validation |
+     | User Sessions | Iteration |  Good   Tolerable   Fail  |   Errors   |
+     |---------------|-----------|---------------------------|------------|
+     |               |     1     | 100.0%   100.0%    0.0%   |     0      |
+     |               |-----------|---------------------------|------------|
+     |       5       |     2     | 100.0%   100.0%    0.0%   |     0      |
+     |               |-----------|---------------------------|------------|
+     |               |     3     | 100.0%   100.0%    0.0%   |     0      |
+      --------------------------------------------------------------------
+
+================================================================================
+
+CONFIGURATION
+
+                               Availability Dates                               
+--------------------------------------------------------------------------------
+Backend Simulator             Jun-1999                                          
+SUT Hardware                  Jun-1999                                          
+Web Server Software           Dec-2003                                          
+                              Dec-2005                                          
+Operating System              Feb-2000                                          
+Other Components              N/A                                               
+
+                            System Under Test (SUT)                             
+--------------------------------------------------------------------------------
+# of SUTs                     1                                                 
+Vendor                        Ultimate Computers                                
+Model                         Model 1                                           
+Processor                     Celeron                                           
+Processor Speed (MHz)         366                                               
+# Processors                  1 (1 core, 1 chip, 1 core/chip)                   
+Primary Cache                 16KB(I) + 16KB(D) on chip                         
+Secondary Cache               128 KB                                            
+Other Cache                   N/A                                               
+Memory                        128 MB SDRAM                                      
+Disk Subsystem                1 x 10GB SCSI                                     
+Disk Controllers              Onboard LSI SCSI                                  
+Operating System              HURL 6.1 (kernel 2.2.15pre8)                      
+File System                   ext2                                              
+Other Hardware                N/A                                               
+Other Software                N/A                                               
+
+                                 HTTP Software                                  
+--------------------------------------------------------------------------------
+Vendor                        SoFast Software                                   
+Name/Version                  WebStreaker v1.0 (23-bit)                         
+Dynamic Scripts               SPEC-PHP5                                         
+Server Cache                  N/A                                               
+Log Mode                      Common Log Format                                 
+
+                                 Script Engine                                  
+--------------------------------------------------------------------------------
+Vendor                        SoFast Software                                   
+Name/Version                  JSP Servlet Engine v1.0                           
+Dynamic Scripts               JSP                                               
+Server Cache                  N/A                                               
+Log Mode                      Common Log Format                                 
+
+                                  SUT Network                                   
+--------------------------------------------------------------------------------
+# of Controllers              1                                                 
+Network Controllers           Systel FasterNet (embedded)                       
+# of Networks                 1                                                 
+Network Type                  Fast Ethernet                                     
+Network Speed                 100 Mb/s                                          
+MSL (sec)                     30 (Non RFC1122)                                  
+Time-Wait (sec)               60 (Non RFC1122)                                  
+MTU Size                      1500                                              
+
+                                 Client Systems                                 
+--------------------------------------------------------------------------------
+# of Clients                  1                                                 
+Model                         Model 1                                           
+Processor                     Celeron                                           
+Processor Speed (MHz)         366                                               
+# Processors                  1                                                 
+Memory                        128 MB SDRAM                                      
+Network Controller            Systel 10-Speed                                   
+Operating System              HURL 6.1 (kernel 2.2.15pre8)                      
+JVM Version                   Java 2 Runtime Environment, Std Edition (build
+                              1.4.2_01-b06)
+JIT Version                   Java HotSpot Client VM (build 1.4.2_01-b06,
+                              mixed mode)
+Other Hardware                N/A                                               
+Other Software                N/A                                               
+
+                           Backend Simulator (BESIM)                            
+--------------------------------------------------------------------------------
+# of Simulators               1                                                 
+Model                         Model 1                                           
+Processor                     Celeron                                           
+Processor Speed (MHz)         366                                               
+# of Processors               1                                                 
+Memory                        128 MB SDRAM                                      
+Network Controller            Systel 10-Speed                                   
+Operating System              HURL 6.1 (kernel 2.2.15pre8)                      
+File System                   ext2                                              
+Web Server                    New Millenium Webserver v2.000                    
+Server Scripts                SPEC-FCGI v1.0                                    
+Other Hardware                N/A                                               
+Other Software                N/A                                               
+
+================================================================================
+
+NOTES
+
+SUT Notes
+---------
+*  This is my laptop.                                                           
+*  It acts as both web server and load generator.                               
+
+Operating System Notes
+----------------------
+*  No modifications to default OS configuration.                                
+
+HTTP Software Notes
+-------------------
+*  The following tunes made in webserver.conf:                                  
+*  MaxThreads = 10000                                                           
+
+HTTP Script Notes
+-----------------
+*  SPEC-provided PHP scripts used without modification                          
+*  Smarty v2.5.0 used                                                           
+
+Client Notes
+------------
+*  This is my laptop.                                                           
+*  It acts as both web server and load generator.                               
+
+BESIM Notes
+-----------
+*  This is my laptop.                                                           
+*  It acts as both web server and load generator.                               
+
+Other Notes
+-----------
+*  No network switches were used for this result.                               
+*  Result prepared by I.M. Anonymous <anonymous@anonymity.org>                  
+
+================================================================================
+
+DETAILED TEST RESULTS
+
+Iter-|                  |   Total    |                  QOS                   
+ation|   Request Type   |    Reqs    |          Good       Toler      Fail
+-----|------------------|------------|------------------------------------
+     |home              |     67     |            67           0         0
+     |search            |    122     |           122           0         0
+     |catalog           |    104     |           104           0         0
+  1  |product           |    231     |           231           0         0
+     |fileCatalog       |    203     |           203           0         0
+     |file              |    117     |           117           0         0
+     |download          |     52     |            52           0         0
+     |------------------|------------|------------------------------------
+     |      TOTAL       |    896     |           896           0         0
+
+Iter-|                  |    Byte    |  Weighted  | Avg Resp | Average  
+ation|   Request Type   |    Rate    |    ABR     |  (sec)   |  Bytes   
+-----|------------------|------------|------------|----------|----------
+     |home              |  96,325.0  |   737.7    |  0.625   |  60289   
+     |search            |  91,220.5  |   569.4    |  0.280   |  25555   
+     |catalog           |  93,923.9  |   616.7    |  0.345   |  32466   
+  1  |product           |  95,509.1  |  2,885.0   |  0.715   |  68382   
+     |fileCatalog       |  97,025.2  |  3,893.2   |  1.082   |  105006  
+     |file              |  97,618.3  |  2,662.1   |  1.276   |  124578  
+     |download          | 100,000.3  |  88,193.3  |  92.861  | 9286227  
+     |------------------|------------|------------|----------|----------
+     |      TOTAL       |     -      |  99,557.5  |  6.110   | 608,376  
+
+Iteration 1: 5 sessions, 896 requests, 0.09 reqs/sec/session   QOS: 100.0% good, 100.0% tolerable; 0 errors
+
+Iter-|                  |   Total    |                  QOS                   
+ation|   Request Type   |    Reqs    |          Good       Toler      Fail
+-----|------------------|------------|------------------------------------
+     |home              |     67     |            67           0         0
+     |search            |    122     |           122           0         0
+     |catalog           |    100     |           100           0         0
+  2  |product           |    223     |           223           0         0
+     |fileCatalog       |    199     |           199           0         0
+     |file              |    116     |           116           0         0
+     |download          |     52     |            52           0         0
+     |------------------|------------|------------------------------------
+     |      TOTAL       |    879     |           879           0         0
+
+Iter-|                  |    Byte    |  Weighted  | Avg Resp | Average  
+ation|   Request Type   |    Rate    |    ABR     |  (sec)   |  Bytes   
+-----|------------------|------------|------------|----------|----------
+     |home              |  96,384.1  |   750.6    |  0.626   |  60362   
+     |search            |  91,155.2  |   577.4    |  0.279   |  25498   
+     |catalog           |  93,924.1  |   603.0    |  0.345   |  32487   
+  2  |product           |  95,530.1  |  2,831.3   |  0.716   |  68405   
+     |fileCatalog       |  97,025.5  |  3,878.5   |  1.082   |  105007  
+     |file              |  97,637.3  |  2,681.4   |  1.275   |  124541  
+     |download          | 100,000.3  |  88,238.8  |  91.426  | 9142653  
+     |------------------|------------|------------|----------|----------
+     |      TOTAL       |     -      |  99,560.8  |  6.129   | 610,260  
+
+Iteration 2: 5 sessions, 879 requests, 0.09 reqs/sec/session   QOS: 100.0% good, 100.0% tolerable; 0 errors
+
+Iter-|                  |   Total    |                  QOS                   
+ation|   Request Type   |    Reqs    |          Good       Toler      Fail
+-----|------------------|------------|------------------------------------
+     |home              |     68     |            68           0         0
+     |search            |    119     |           119           0         0
+     |catalog           |    100     |           100           0         0
+  3  |product           |    222     |           222           0         0
+     |fileCatalog       |    201     |           201           0         0
+     |file              |    116     |           116           0         0
+     |download          |     53     |            53           0         0
+     |------------------|------------|------------------------------------
+     |      TOTAL       |    879     |           879           0         0
+
+Iter-|                  |    Byte    |  Weighted  | Avg Resp | Average  
+ation|   Request Type   |    Rate    |    ABR     |  (sec)   |  Bytes   
+-----|------------------|------------|------------|----------|----------
+     |home              |  96,375.7  |   753.5    |  0.626   |  60332   
+     |search            |  91,232.2  |   559.7    |  0.280   |  25608   
+     |catalog           |  93,693.7  |   598.3    |  0.347   |  32578   
+  3  |product           |  95,437.6  |  2,793.2   |  0.717   |  68510   
+     |fileCatalog       |  97,055.0  |  3,876.2   |  1.081   |  105005  
+     |file              |  97,669.3  |  2,652.8   |  1.274   |  124523  
+     |download          | 100,000.4  |  88,329.9  |  90.747  | 9074815  
+     |------------------|------------|------------|----------|----------
+     |      TOTAL       |     -      |  99,563.5  |  6.194   | 616,760  
+
+Iteration 3: 5 sessions, 879 requests, 0.09 reqs/sec/session   QOS: 100.0% good, 100.0% tolerable; 0 errors
+
+
+ERRORS
+
+
+Quality of Service Errors
+-------------------------
+
+*  No QOS Errors Found
+
+
+
+Validation Errors
+-----------------
+
+*  No Validation Errors Found
+
+
+
+Request Distribution Errors
+---------------------------
+
+
+*  Weighted percentage difference (-1.91%) for search in Iteration 1 is too
+   high. Expected: 105 requests, Actual: 122
+   
+
+*  Weighted percentage difference (-2.73%) for product in Iteration 1 is too
+   high. Expected: 208 requests, Actual: 231
+   
+
+*  Weighted percentage difference (-1.64%) for fileCatalog in Iteration 1 is
+   too high. Expected: 189 requests, Actual: 203
+   
+
+*  Sum of weighted percentage difference (-6.67%) exceeds 1.5% for Iteration 1  
+
+*  Weighted percentage difference (-1.94%) for search in Iteration 2 is too
+   high. Expected: 105 requests, Actual: 122
+   
+
+*  Weighted percentage difference (-1.82%) for product in Iteration 2 is too
+   high. Expected: 207 requests, Actual: 223
+   
+
+*  Weighted percentage difference (-1.21%) for fileCatalog in Iteration 2 is
+   too high. Expected: 188 requests, Actual: 199
+   
+
+*  Sum of weighted percentage difference (-4.83%) exceeds 1.5% for Iteration 2  
+
+*  Weighted percentage difference (-1.66%) for search in Iteration 3 is too
+   high. Expected: 105 requests, Actual: 119
+   
+
+*  Weighted percentage difference (-1.86%) for product in Iteration 3 is too
+   high. Expected: 206 requests, Actual: 222
+   
+
+*  Weighted percentage difference (-1.59%) for fileCatalog in Iteration 3 is
+   too high. Expected: 187 requests, Actual: 201
+   
+
+*  Sum of weighted percentage difference (-5.46%) exceeds 1.5% for Iteration 3  
+
+
+================================================================================
+For questions about this result, please contact the submitter: Speedy Systems,
+Pomona
+
+Copyright (c) 2005 Standard Performance Evaluation Corporation
