@@ -165,11 +165,10 @@ sub start_image_kvm {
   if(!($graphics)) {
     $cmd .= ' -nographic';
   }
-  if (!($watch)) {
-    $cmd .= ' -daemonize';
-  }
   $cmd .= ' ' . $img;
-
+  if (!($watch)) {
+    $cmd .= ' &';
+  }
   return $cmd;
 }
 
