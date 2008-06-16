@@ -11,7 +11,7 @@ echo "uploading $1 $2 $3 test results"
 
 host=`hostname`
 cp /opt/SPECweb2005/results/* /root/devel/benchvm/results/$2/$1/$3/${host}/
-mv /opt/SPECweb2005/results/* /opt/SPECweb2005/results.xen-summit/
+mv /opt/SPECweb2005/results/* /opt/SPECweb2005/results.xen-summit.${1}/
 cd /root/devel/benchvm/results/$2/$1/$3/${host}/
 svn add *
 svn commit -m "add ${1} ${2} ${3} test results from ${host}"
