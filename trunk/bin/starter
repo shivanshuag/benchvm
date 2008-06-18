@@ -36,18 +36,21 @@ GetOptions ('h|help' => \$help,
             'm|memory=i' => \$mem,
             'w|watch' => \$watch,
 	    'g|graphics' => \$graphics,
+            'n|network_script=s' => \$network_script,
             'v' => \$verbose);
 
 # Display help
 if($help || ($#ARGV+1) != 2 || ($xen == $kvm)){
   print 'Usage: [options] name count '."\n";
   print '  Either -k or -x must be specified, but not both'."\n";
-  print "  -k\t\t\t\tkvm\n";
-  print "  -x\t\t\t\txen\n";
-  print "  -m\t\t\t\tmemory in MB\n";
-  print "  -g\t\t\t\tgraphics\n";
-  print "  -v\t\t\t\tverbose\n";
-  print "  -h --help\t\t\t\t\tThis.\n";
+  print "  -k, --kvm\t\t\tkvm\n";
+  print "  -x, --xen\t\t\txen\n";
+  print "  -m, --memory\t\t\tmemory in MB\n";
+  print "  -w, --watch\t\t\tload guests serially in foreground (debug purposes)\n";
+  print "  -g, --graphics\t\tdisplay guests graphically (when possible)\n";
+  print "  -n, --network_script\t\tload alternate network script\n";
+  print "  -v, --verbose\t\t\tverbose\n";
+  print "  -h --help\t\t\tThis.\n";
   exit(1);
 }
 
