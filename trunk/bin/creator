@@ -358,6 +358,7 @@ sub run_modify_filesystem {
     ex_verbose('chroot ' . $dir . ' apt-get install -f -y --force-yes', "fix dependencies");
     ex_verbose('chroot ' . $dir . ' dpkg -i phoronix-test-suite_1.0.0_all.deb', "Installing phoronix test suite into guest");
     ex_quiet('sed  -i.orig ' . "'" . 's/2.2.8/2.2.9/g' . "' " . $dir . '/usr/share/phoronix-test-suite/pts/test-resources/build-apache/*', "fix version number of apache source in pts"); 
+    ex_quiet('sed  -i.orig ' . "'" . 's/2.2.8/2.2.9/g' . "' " . $dir . '/usr/share/phoronix-test-suite/pts/test-profiles/build-apache.xml', "fix version number of apache source in test profile");
     ex_quiet('sed  -i.orig ' . "'s/<MD5>39a755eb0f584c279336387b321e3dfc<\\/MD5>/<MD5>80d3754fc278338033296f0d41ef2c04<\\/MD5>/' " . $dir . '/usr/share/phoronix-test-suite/pts/test-resources/build-apache/downloads.xml', "fixing apache md5 in pts");
   }
 }
