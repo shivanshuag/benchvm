@@ -63,25 +63,28 @@ my $specweb_workload = 0;
 my $guest_isolation_suite_dir = '/root/isolation/';
 my $isolation_suite = 0;
 
+my $phoronix_test_suite = 0;
+
 #Debootstrap Options
 my $arch = 0;
-my $apt_include = 'openssh-server,apache2,libapache2-mod-php5,build-essential,php5-cli,php5-gd,time,screen';
+my $apt_include = 'openssh-server,apache2,libapache2-mod-php5,build-essential,time,screen,wget,language-pack-en,language-pack-en-base';
 my $apt_exclude = 'initramfs-tools';
 my $distro = 'hardy';
 my $mirror = 0;
 
 
-
 #DD Config Options
 my $dd_bs = 1024*1024;
 
-GetOptions ('a|arch=s' => \$arch,
+GetOptions ('r|install_dir=s' => \$install_dir,
+            'a|arch=s' => \$arch,
             'd|distro=s' => \$distro,
             'l|location=s' => \$location,
             'm|mirror=s' => \$mirror,
             'f|free=i' => \$free_size_mb,
             'w|workload' => \$specweb_workload,
             'i|isolation' => \$isolation_suite,
+            't|phoronix' => \$phoronix_test_suite,
             'p|provision=i' => \$provision,
             'c|clean' => \$clean,
             'v' => \$verbose,
@@ -90,6 +93,7 @@ GetOptions ('a|arch=s' => \$arch,
 # Display help
 if($help || ($#ARGV+1) != 1){
   print 'Usage: [options] imagename' . "\n";
+  print "  -r <install_dir>, --install_dir <install_dir>\t\tSpecify alternate benchvm install directory\n";
   print "  -a <arch>, --arch <arch>\t\t\tArchitecture to Install\n";
   print "  -d <distro>, --distro <distro>\t\tDistro to Install\n";
   print "  -l <location>, --location <location>\t\tLocation to Create images\n";
@@ -97,6 +101,7 @@ if($help || ($#ARGV+1) != 1){
   print "  -f <free space>, --f <free space>\t\tFree space in created images\n";
   print "  -w, --workload\t\tGet www workload for specweb, include in images\n";
   print "  -i, --isolation\t\tInclude isolation suite in the image\n";
+  print "  -t, --phoronix_suite\t\tInclude phoronix test suite in the image\n";
   print "  -p <num>, --provision <num>\t\tProvision <num> copies of previously created image\n";
   print "  --clean\t\t\t\tclean old image build\n";
   print "  -v\t\t\t\tverbose\n";
@@ -109,6 +114,11 @@ my $img_name = $uuid . '-pristine.img';
 my $mount_dir = $location . 'mnt-' . $uuid;
 my $dbs_dir = $location . 'tmp-' . $uuid;
 my $provision_dir = $location . 'img-' . $uuid;
+
+
+if($phoronix_test_suite) {
+  $apt_include .= ',php5-cli,php5-gd,libgd2-xpm,libx11-6,libx11-data,libt1-5,libxpm4,wget,libportaudio-dev,libportaudio0,libgtk2.0-dev,libsdl1.2-dev,libsdl-gfx1.2-dev,libsdl-net1.2-dev,libsdl-image1.2-dev,libsdl-ttf2.0-dev,freeglut3-dev,csh,libpng12-dev,git-core,curl,xserver-xorg-dev,libxmu-dev,libxmuu-dev,bison,flex,libimlib2-dev,openjdk-6-jre,libportaudio-dev,gfortran,libglew1.5-dev,scons,zlib1g-dev,libjpeg62-dev,ca-certificates,java-common,libaccess-bridge-java,libice-dev,liblcms1,libsdl-gfx1.2-4,libsdl-net1.2,libsm-dev,libx11-6,libx11-data,libx11-dev,libxau-dev,libxcomposite-dev,libxcursor-dev,libxdamage-dev,libxdmcp-dev,libxext-dev,libxfixes-dev,libxfixes3,libxft-dev,libxft2,libxi-dev,libxinerama-dev,libxmu-headers,libxrandr-dev,libxrender-dev,libxt-dev,libxt6,libxtst6,openjdk-6-jre-headless,openjdk-6-jre-lib,openssl,tzdata-java,x11proto-composite-dev,x11proto-core-dev,x11proto-damage-dev,x11proto-fixes-dev,x11proto-fonts-dev,x11proto-input-dev,x11proto-kb-dev,x11proto-randr-dev,x11proto-render-dev,x11proto-video-dev,x11proto-xext-dev,x11proto-xinerama-dev,xtrans-dev,libice-dev,libsm-dev,libx11-6,libx11-data,libx11-dev,libxau-dev,libxcomposite-dev,libxcursor-dev,libxdamage-dev,libxdmcp-dev,libxext-dev,libxfixes-dev,libxfixes3,libxft-dev,libxft2,libxi-dev,libxinerama-dev,libxmu-headers,libxrandr-dev,libxrender-dev,libxt-dev,libxt6,x11proto-composite-dev,x11proto-core-dev,x11proto-damage-dev,x11proto-fixes-dev,x11proto-fonts-dev,x11proto-input-dev,x11proto-kb-dev,x11proto-randr-dev,x11proto-render-dev,x11proto-video-dev,x11proto-xext-dev,x11proto-xinerama-dev,xtrans-dev,libogg-dev,libogg0,,libice-dev,libsm-dev,libx11-6,libx11-data,libx11-dev,libxau-dev,libxcomposite-dev,libxcursor-dev,libxdamage-dev,libxdmcp-dev,libxext-dev,libxfixes-dev,libxfixes3,libxft-dev,libxft2,libxi-dev,libxinerama-dev,libxmu-headers,libxrandr-dev,libxrender-dev,libxt-dev,libxt6,x11proto-composite-dev,x11proto-core-dev,x11proto-damage-dev,x11proto-fixes-dev,x11proto-fonts-dev,x11proto-input-dev,x11proto-kb-dev,x11proto-randr-dev,x11proto-render-dev,x11proto-video-dev,x11proto-xext-dev';
+}
 
 #################
 #  Subroutines  #
@@ -341,6 +351,15 @@ sub run_modify_filesystem {
         ex_quiet('chgrp root -R ' . $dir  . '/var/www/*',
                  "Setting group on /var/www");
   }
+
+  if($phoronix_test_suite) {
+    ex_verbose($install_dir . 'bin/get_phoronix.sh');
+    ex_verbose('cp ' . $install_dir . 'bin/phoronix-test-suite_1.0.0_all.deb ' . $dir, "Copy phoronix install package to chroot");
+    ex_verbose('chroot ' . $dir . ' apt-get install -f -y --force-yes', "fix dependencies");
+    ex_verbose('chroot ' . $dir . ' dpkg -i phoronix-test-suite_1.0.0_all.deb', "Installing phoronix test suite into guest");
+    ex_quiet('sed  -i.orig ' . "'" . 's/2.2.8/2.2.9/g' . "' " . $dir . '/usr/share/phoronix-test-suite/pts/test-resources/build-apache/*', "fix version number of apache source in pts"); 
+    ex_quiet('sed  -i.orig ' . "'s/<MD5>39a755eb0f584c279336387b321e3dfc<\\/MD5>/<MD5>80d3754fc278338033296f0d41ef2c04<\\/MD5>/' " . $dir . '/usr/share/phoronix-test-suite/pts/test-resources/build-apache/downloads.xml', "fixing apache md5 in pts");
+  }
 }
 
 sub run_create_image_file {
@@ -419,7 +438,7 @@ sub run_copy_fs_to_image {
   ex_quiet('mount ' . $dev_root_partition . ' ' . $tmp_mount_dir,
            "Mounting Loopback Device");
   $is_mounted = 1;
-  ex_verbose('(cd ' . $local_root  . ';tar lcf - .)|(cd ' .
+  ex_verbose('(cd ' . $local_root  . ';tar lpcf - .)|(cd ' .
              $tmp_mount_dir . '; tar xpf - )',
              "Copying Filesystem to guest image");
 }
