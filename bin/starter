@@ -24,7 +24,7 @@ my $imagedir;
 my $mem = 256;
 my $mac_base = 'AA:BB:CC:DD:EE:';
 my $network_script = './qemu-ifup';
-
+my $network_script2 = 0;
 my $kvm = 0;
 my $xen = 0;
 my $watch = 0;
@@ -37,6 +37,7 @@ GetOptions ('h|help' => \$help,
             'w|watch' => \$watch,
 	    'g|graphics' => \$graphics,
             'n|network_script=s' => \$network_script,
+            'n2|network_script2=s' => \$network_script2,
             'v' => \$verbose);
 
 # Display help
@@ -49,6 +50,7 @@ if($help || ($#ARGV+1) != 2 || ($xen == $kvm)){
   print "  -w, --watch\t\t\tload guests serially in foreground (debug purposes)\n";
   print "  -g, --graphics\t\tdisplay guests graphically (when possible)\n";
   print "  -n, --network_script\t\tload alternate network script\n";
+  print "  -n2, --network_script2\t\tload second network script\n";
   print "  -v, --verbose\t\t\tverbose\n";
   print "  -h --help\t\t\tThis.\n";
   exit(1);
@@ -164,6 +166,11 @@ sub start_image_kvm {
   $cmd .= ' -append "root=UUID=' . $root_uuid . ' console=tty0 console=ttyS0,115200n8"';
   $cmd .= ' -net nic,vlan=0,macaddr=' . $mac_base . sprintf("%02x",$num);
   $cmd .= ' -net tap,vlan=0,ifname=tap' . $num . ',script='.$network_script;
+
+  if($network_script2) {
+    my $num2 = $num + 123;
+    $cmd .= ' -net tap,vlan=0,ifname=tap' . $num2 . ',script='.$network_script2;
+  }
   
   if(!($graphics)) {
     $cmd .= ' -nographic';
@@ -193,6 +200,16 @@ sub start_image_xen {
 #  $cmd .= ' root=UUID=' . $root_uuid;
   $cmd .= ' root=/dev/hda2';
   $cmd .= ' vif=mac=' . $mac_base . sprintf("%02x",$num) .',bridge=' . $bridge_dev;
+
+  if($network_script2) {
+    my $awk_cmd2 = "awk " . "'" .  '{ if(/addif/) { print $3} }' . "' " . $network_script2; 
+    my $bridge_dev2 = `$awk_cmd2`;
+    chomp($bridge_dev2);
+    print $bridge_dev2;
+    my $num2 = $num + 123;
+    $cmd .= ' vif=mac'  . $mac_base . sprintf("%02x",$num2) .',bridge=' . $bridge_dev2;
+  }
+
   $cmd .= ' on_poweroff=destroy';
   $cmd .= ' on_reboot=restart';
   $cmd .= ' on_crash=preserve';
