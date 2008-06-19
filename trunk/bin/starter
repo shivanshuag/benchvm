@@ -180,7 +180,10 @@ sub start_image_xen {
   if($num >= 155){
     log_fatal('Max number of images supported is currently 154');
   }
-    
+  my $awk_cmd = "awk " . "'" .  '{ if(/addif/) { print $3} }' . "' " . $network_script; 
+  my $bridge_dev = `$awk_cmd`;
+  chomp($bridge_dev);
+  print $bridge_dev;
   my $cmd = 'xm create /dev/null';
   $cmd .= ' name=benchvm' . $num;
   $cmd .= ' memory=' . $mem;
@@ -189,7 +192,7 @@ sub start_image_xen {
   $cmd .= ' disk=tap:aio:' . $img . ',hda,w';
 #  $cmd .= ' root=UUID=' . $root_uuid;
   $cmd .= ' root=/dev/hda2';
-  $cmd .= ' vif=mac=' . $mac_base . sprintf("%02x",$num);
+  $cmd .= ' vif=mac=' . $mac_base . sprintf("%02x",$num) .',bridge=' . $bridge_dev;
   $cmd .= ' on_poweroff=destroy';
   $cmd .= ' on_reboot=restart';
   $cmd .= ' on_crash=preserve';
