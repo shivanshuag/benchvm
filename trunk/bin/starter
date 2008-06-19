@@ -37,7 +37,7 @@ GetOptions ('h|help' => \$help,
             'w|watch' => \$watch,
 	    'g|graphics' => \$graphics,
             'n|network_script=s' => \$network_script,
-            'n2|network_script2=s' => \$network_script2,
+            's|network_script2=s' => \$network_script2,
             'v' => \$verbose);
 
 # Display help
@@ -50,7 +50,7 @@ if($help || ($#ARGV+1) != 2 || ($xen == $kvm)){
   print "  -w, --watch\t\t\tload guests serially in foreground (debug purposes)\n";
   print "  -g, --graphics\t\tdisplay guests graphically (when possible)\n";
   print "  -n, --network_script\t\tload alternate network script\n";
-  print "  -n2, --network_script2\t\tload second network script\n";
+  print "  -s, --network_script2\t\tload second network script\n";
   print "  -v, --verbose\t\t\tverbose\n";
   print "  -h --help\t\t\tThis.\n";
   exit(1);
