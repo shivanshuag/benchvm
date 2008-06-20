@@ -1,0 +1,407 @@
+Integrate these processes into benchvm automation.
+Until they are integrated, cluster SSH, cssh is a good tool to use.
+
+#run on remote server such as polaris, a 1hr cron job to svn up
+i=1; while [ "$i -lt 2" ]; do svn up; sleep 3600; done
+
+#isolation
+
+#ON SPECWEB CLIENTS
+mkdir /opt/SPECweb2005/results.xen-summit.xen
+mkdir /opt/SPECweb2005/results.xen-summit.xen
+echo <num> > /root/time #where num is specwebclient number (1-4)
+
+#ON MASTER SERVER
+mkdir -p /root/devel/benchvm/results/isolation/kvm/baseline
+svn add /root/devel/benchvm/results/isolation/kvm/
+svn commit -m "add kvm baseline directory"
+
+
+#ON VMM
+./starter -k kvm-guest 4
+
+
+#BASELINE
+mkdir /root/devel/benchvm/results/isolation/kvm/baseline/`hostname`
+svn add /root/devel/benchvm/results/isolation/kvm/baseline/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` baseline result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh kvm isolation baseline
+
+
+#CPU
+***mkdir cpu results directory on master
+mkdir /root/devel/benchvm/results/isolation/kvm/cpu
+***svn commit that directory
+svn add /root/devel/benchvm/results/isolation/kvm/cpu
+svn commit -m "add kvm cpu results directory"
+***power down guests (if up)
+ssh 192.168.133.100 poweroff && ssh 192.168.133.101 poweroff && ssh 192.168.133.102 poweroff && ssh 192.168.133.103 poweroff
+***rename disk images
+
+mv image-0.img image-baseline-0.img && mv image-1.img image-baseline-1.img && mv image-2.img image-baseline-2.img && mv image-3.img image-baseline-3.img
+mv image-4.img image-0.img && mv image-5.img image-1.img && mv image-6.img image-2.img && mv image-7.img image-3.img
+
+****RUN IN SCREEN
+screen
+***start up guests
+./starter -k kvm-guest 4
+
+CTRL+A D
+
+ssh 192.168.133.100
+screen
+***start the cpu stress test
+cd isolation/stress_tests_0.2/cpu/
+make
+./cpu_stress_test
+CTRL+A D
+
+#on spec clients
+mkdir /root/devel/benchvm/results/isolation/kvm/cpu/`hostname`
+svn add /root/devel/benchvm/results/isolation/kvm/cpu/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` cpu result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh kvm isolation cpu
+
+***mkdir disk results directory on master
+mkdir /root/devel/benchvm/results/isolation/kvm/disk
+***svn commit that directory
+svn add /root/devel/benchvm/results/isolation/kvm/disk
+svn commit -m "add kvm disk results directory"
+***power down guests (if up)
+ssh 192.168.133.100 poweroff && ssh 192.168.133.101 poweroff && ssh 192.168.133.102 poweroff && ssh 192.168.133.103 poweroff
+***rename disk images
+mv image-0.img image-cpu-0.img && mv image-1.img image-cpu-1.img && mv image-2.img image-cpu-2.img && mv image-3.img image-cpu-3.img
+mv image-8.img image-0.img && mv image-9.img image-1.img && mv image-10.img image-2.img && mv image-11.img image-3.img
+
+****RUN IN SCREEN
+screen
+***start up guests
+./starter -k kvm-guest 4
+
+CTRL+A D
+
+ssh 192.168.133.100
+screen
+***start the disk stress test
+cd isolation/stress_tests_0.2/disk/
+make
+./cpu_stress_test
+CTRL+A D
+
+
+svn up
+mkdir /root/devel/benchvm/results/isolation/kvm/disk/`hostname`
+svn add /root/devel/benchvm/results/isolation/kvm/disk/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` disk result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh kvm isolation disk
+
+***mkdir fork results directory on master
+***svn commit that directory
+***power down guests (if up)
+ssh 192.168.133.100 poweroff && ssh 192.168.133.101 poweroff && ssh 192.168.133.102 poweroff && ssh 192.168.133.103 poweroff
+***rename disk images
+mv image-0.img image-disk-0.img && mv image-1.img image-disk-1.img && mv image-2.img image-disk-2.img && mv image-3.img image-disk-3.img
+mv image-12.img image-0.img && mv image-13.img image-1.img && mv image-14.img image-2.img && mv image-15.img image-3.img
+
+****RUN IN SCREEN
+screen
+***start up guests
+./starter -k kvm-guest 4
+
+CTRL+A D
+
+ssh 192.168.133.100
+screen
+***start the fork stress test on the 0th guest
+cd isolation/stress_tests_0.2/fork/
+make
+./fork_stress_test
+CTRL+A D
+
+
+
+svn up
+mkdir /root/devel/benchvm/results/isolation/kvm/fork/`hostname`
+svn add /root/devel/benchvm/results/isolation/kvm/fork/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` fork result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh kvm isolation fork
+
+***mkdir memory results directory on master
+***svn commit that directory
+***power down guests (if up)
+***rename disk images
+mv image-0.img image-fork-0.img && mv image-1.img image-fork-1.img && mv image-2.img image-fork-2.img && mv image-3.img image-fork-3.img
+mv image-16.img image-0.img && mv image-17.img image-1.img && mv image-18.img image-2.img && mv image-19.img image-3.img
+
+****RUN IN SCREEN
+screen
+***start up guests
+./starter -k kvm-guest 4
+
+CTRL+A D
+
+ssh 192.168.133.100
+screen
+***start the fork stress test on the 0th guest
+cd isolation/stress_tests_0.2/fork/
+make
+./fork_stress_test
+CTRL+A D
+
+***start the memory stress test on the 0th guest
+svn up
+mkdir /root/devel/benchvm/results/isolation/kvm/memory/`hostname`
+svn add /root/devel/benchvm/results/isolation/kvm/memory/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` memory result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh kvm isolation memory
+
+
+
+
+mv image-0.img image-memory-0.img && mv image-1.img image-memory-1.img && mv image-2.img image-memory-2.img && mv image-3.img image-memory-3.img
+mv image-20.img image-0.img && mv image-21.img image-1.img && mv image-22.img image-2.img && mv image-23.img image-3.img
+
+
+
+
+***mkdir memory results directory on master
+***svn commit that directory
+***power down guests (if up)
+***rename disk images
+***start up guests
+./starter <-x | -k> <guest-name> 4
+***start the memory stress test on the 0th guest
+svn up
+mkdir /root/devel/benchvm/results/isolation/kvm/memory/`hostname`
+svn add /root/devel/benchvm/results/isolation/kvm/memory/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` memory result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh kvm isolation memory
+
+***mkdir network-recv results directory on master
+***svn commit that directory
+***power down guests (if up)
+***rename disk images
+***start up guests
+./starter <-x | -k> <guest-name> 4
+***start the network-recv stress test on the 0th guest
+svn up
+mkdir /root/devel/benchvm/results/isolation/kvm/network-recv/`hostname`
+svn add /root/devel/benchvm/results/isolation/kvm/network-recv/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` network-recv result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh kvm isolation network-recv
+
+
+
+mv image-0.img image-network-recv-0.img && mv image-1.img image-network-recv-1.img && mv image-2.img image-network-recv-2.img && mv image-3.img image-network-recv-3.img
+mv image-24.img image-0.img && mv image-25.img image-1.img && mv image-26.img image-2.img && mv image-27.img image-3.img
+
+
+***mkdir network-send results directory on master
+***svn commit that directory
+***power down guests (if up) destroy guest if broken
+***rename disk images
+***start up guests
+./starter <-x | -k> <guest-name> 4
+***start the network-send stress test on the 0th guest
+svn up
+mkdir /root/devel/benchvm/results/isolation/kvm/network-send/`hostname`
+svn add /root/devel/benchvm/results/isolation/kvm/network-send/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` network-send result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh kvm isolation network-send
+
+ssh 192.168.133.100 poweroff && ssh 192.168.133.101 poweroff && ssh 192.168.133.102 poweroff && ssh 192.168.133.103 poweroff
+
+
+mv image-0.img image-network-send-0.img && mv image-1.img image-network-send-1.img && mv image-2.img image-network-send-2.img && mv image-3.img image-network-send-3.img
+
+
+
+
+
+
+
+ 
+#xen
+***mkdir cpu results directory on master
+***svn commit that directory
+***power down guests (if up)
+***rename disk images
+***start up guests
+***start the cpu stress test
+mkdir /root/devel/benchvm/results/isolation/xen/cpu/`hostname`
+svn add /root/devel/benchvm/results/isolation/xen/cpu/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` cpu result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh xen isolation cpu
+
+***mkdir disk results directory on master
+***svn commit that directory
+***power down guests (if up)
+***rename disk images
+***start up guests
+***start the disk stress test
+mkdir /root/devel/benchvm/results/isolation/xen/disk/`hostname`
+svn add /root/devel/benchvm/results/isolation/xen/disk/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` disk result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh xen isolation disk
+
+***mkdir fork results directory on master
+***svn commit that directory
+***power down guests (if up)
+***rename disk images
+***start up guests
+./starter <-x | -k> <guest-name> 4
+***start the fork stress test on the 0th guest
+svn up
+mkdir /root/devel/benchvm/results/isolation/xen/fork/`hostname`
+svn add /root/devel/benchvm/results/isolation/xen/fork/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` fork result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh xen isolation fork
+
+***mkdir memory results directory on master
+***svn commit that directory
+***power down guests (if up)
+***rename disk images
+***start up guests
+./starter <-x | -k> <guest-name> 4
+***start the memory stress test on the 0th guest
+svn up
+mkdir /root/devel/benchvm/results/isolation/xen/memory/`hostname`
+svn add /root/devel/benchvm/results/isolation/xen/memory/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` memory result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh xen isolation memory
+
+***mkdir memory results directory on master
+***svn commit that directory
+***power down guests (if up)
+***rename disk images
+***start up guests
+./starter <-x | -k> <guest-name> 4
+***start the memory stress test on the 0th guest
+svn up
+mkdir /root/devel/benchvm/results/isolation/xen/memory/`hostname`
+svn add /root/devel/benchvm/results/isolation/xen/memory/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` memory result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh xen isolation memory
+
+***mkdir network-recv results directory on master
+***svn commit that directory
+***power down guests (if up)
+***rename disk images
+***start up guests
+./starter <-x | -k> <guest-name> 4
+***start the network-recv stress test on the 0th guest
+svn up
+mkdir /root/devel/benchvm/results/isolation/xen/network-recv/`hostname`
+svn add /root/devel/benchvm/results/isolation/xen/network-recv/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` network-recv result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh xen isolation network-recv
+
+
+***mkdir network-send results directory on master
+***svn commit that directory
+***power down guests (if up) destroy guest if broken
+***rename disk images
+***start up guests
+./starter <-x | -k> <guest-name> 4
+***start the network-send stress test on the 0th guest
+svn up
+mkdir /root/devel/benchvm/results/isolation/xen/network-send/`hostname`
+svn add /root/devel/benchvm/results/isolation/xen/network-send/`hostname`
+time=`cat /root/time`; sleep `expr 60 \* $time` && svn commit -m "add `hostname` network-send result directory"
+/root/start_specweb.sh && time=`cat /root/time`; sleep `expr 60 \* $time` && /root/devel/benchvm/bin/upload_new_results.sh xen isolation network-send
+
+#
+linux_vs_kvm_guest_vs_xen_guest
+linux_trial1
+
+
+
+
+#rename images procedure
+mv image-0.img image-<test type>-0.img
+mv image-1.img image-<test type>-1.img
+mv image-2.img image-<test type>-2.img
+mv image-3.img image-<test type>-3.img
+
+mv image-<next>.img image-0.img
+mv image-<next+1>.img image-1.img
+mv image-<next+2>.img image-2.img
+mv image-<next+3>.img image-3.img
+
+#PROCESS NEEDED ON NEW HOST
+svn checkout https://benchvm.googlecode.com/svn/trunk/ benchvm --username deshantm
+
+./creator -d hardy -f 4096 -w -v
+./creator -p ${num_images} -v xen-guest
+
+#TODOS
+
+needed for kvm
+qemu bridge-utils uml-utilities vde2
+
+#php5-gd dependencies
+libgd2-xpm, libx11-6, libx11-data libt1-5, libxpm4, 
+
+#phoronix suite
+wget, libportaudio-dev libportaudio0,
+libgtk2.0-dev, libsdl1.2-dev, libsdl-gfx1.2-dev, libsdl-net1.2-dev, libsdl-image1.2-dev, libsdl-ttf2.0-dev,freeglut3-dev, csh, libpng12-dev, git-core curl, xserver-xorg-dev libxmu-dev libxmuu-dev, bison, flex, libimlib2-dev, openjdk-6-jre, libportaudio-dev, gfortran, libglew1.5-dev, scons, zlib1g-dev, libjpeg62-dev
+
+#perf
+./starter -k -v -w -m 2048 -n qemu-ifup-clarkson perf_guest 1
+
+#scal
+./starter -k -v -m 125 -s qemu-ifup-clarkson scal_guest 1
+ssh guest1
+
+./starter -k -v -m 125 -s qemu-ifup-clarkson scal_guest 2
+/root/setup_networking.sh 2
+cssh guest1 guest2 
+
+./starter -k -v -m 125 -s qemu-ifup-clarkson scal_guest 4
+/root/setup_networking.sh 4
+cssh guest1 guest2 guest3 guest4
+
+./starter -k -v -m 125 -s qemu-ifup-clarkson scal_guest 8
+/root/setup_networking.sh 8
+cssh guest1 guest2 guest3 guest4 guest5 guest6 guest7 guest8
+
+./starter -k -v -m 125 -s qemu-ifup-clarkson scal_guest 16
+/root/setup_networking.sh 16
+cssh guest1 guest2 guest3 guest4 guest5 guest6 guest7 guest8 guest9 guest10 guest11 guest12 guest13 guest14 guest15 guest16
+
+./starter -k -v -m 125 -s qemu-ifup-clarkson scal_guest 30
+/root/setup_networking.sh 30
+cssh guest1 guest2 guest3 guest4 guest5 guest6 guest7 guest8 guest9 guest10 guest11 guest12 guest13 guest14 guest15 guest16 guest17 guest18 guest19 guest20 guest21 guest22 guest23 guest24 guest25 guest26 guest27 guest28 guest29 guest30
+
+
+#
+phoronix-test-suite install build-apache
+phoronix-test-suite benchmark build-apache
+
+#
+
+#scal
+./starter -x -v -m 125 -s qemu-ifup-clarkson scal_guest 1
+/root/setup_networking.sh 1
+ssh guest1
+
+./starter -x -v -m 125 -s qemu-ifup-clarkson scal_guest 2
+/root/setup_networking.sh 2
+cssh guest1 guest2 
+
+./starter -x -v -m 125 -s qemu-ifup-clarkson scal_guest 4
+/root/setup_networking.sh 4
+cssh guest1 guest2 guest3 guest4
+
+./starter -x -v -m 125 -s qemu-ifup-clarkson scal_guest 8
+/root/setup_networking.sh 8
+cssh guest1 guest2 guest3 guest4 guest5 guest6 guest7 guest8
+
+./starter -x -v -m 125 -s qemu-ifup-clarkson scal_guest 16
+/root/setup_networking.sh 16
+cssh guest1 guest2 guest3 guest4 guest5 guest6 guest7 guest8 guest9 guest10 guest11 guest12 guest13 guest14 guest15 guest16
+
+./starter -x -v -m 125 -s qemu-ifup-clarkson scal_guest 30
+/root/setup_networking.sh 30
+cssh guest1 guest2 guest3 guest4 guest5 guest6 guest7 guest8 guest9 guest10 guest11 guest12 guest13 guest14 guest15 guest16 guest17 guest18 guest19 guest20 guest21 guest22 guest23 guest24 guest25 guest26 guest27 guest28 guest29 guest30
+
