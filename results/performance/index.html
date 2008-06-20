@@ -25,7 +25,63 @@
 <a href="http://global.phoronix-test-suite.com/index.php?k=profile&u=root-2396-20997-5083">Phoronix Test Suite iozone (3 trials)</a>
 <br><br>
 
+<pre>
+Linux CPU results
 
+time ./cpu 
+
+real	2m17.245s
+user	2m17.245s
+sys	0m0.004s
+root@xen-kvm-testing-1:~# time ./cpu 
+
+real	2m17.423s
+user	2m17.429s
+sys	0m0.004s
+root@xen-kvm-testing-1:~# time ./cpu 
+
+real	2m17.334s
+user	2m17.341s
+sys	0m0.000s
+
+
+Xen CPU results
+
+root@benchvm0:~# time ./cpu
+
+real	2m17.426s
+user	2m17.425s
+sys	0m0.000s
+root@benchvm0:~# time ./cpu
+
+real	2m17.462s
+user	2m17.461s
+sys	0m0.000s
+root@benchvm0:~# time ./cpu
+
+real	2m17.447s
+user	2m17.445s
+sys	0m0.004s
+
+KVM CPU results
+
+root@benchvm0:~# time ./cpu 
+
+real	2m18.250s
+user	2m18.217s
+sys	0m0.004s
+root@benchvm0:~# time ./cpu 
+
+real	2m18.268s
+user	2m18.201s
+sys	0m0.036s
+root@benchvm0:~# time ./cpu 
+
+real	2m18.192s
+user	2m18.153s
+sys	0m0.012s
+
+</pre>
 
 <b>Xen trial run (256 MB RAM)</b><br>
 <a href="http://global.phoronix-test-suite.com/index.php?k=profile&u=root-25130-11753-7000">Phoronix Test Suite universe-cli (1 pre-trial)</a>
