@@ -204,7 +204,6 @@ sub start_image_xen {
   my $awk_cmd = "awk " . "'" .  '{ if(/addif/) { print $3} }' . "' " . $network_script; 
   my $bridge_dev = `$awk_cmd`;
   chomp($bridge_dev);
-  print $bridge_dev;
   my $cmd = 'xm create /dev/null';
   $cmd .= ' name=benchvm' . $num;
   $cmd .= ' memory=' . $mem;
@@ -219,7 +218,6 @@ sub start_image_xen {
     my $awk_cmd2 = "awk " . "'" .  '{ if(/addif/) { print $3} }' . "' " . $network_script2; 
     my $bridge_dev2 = `$awk_cmd2`;
     chomp($bridge_dev2);
-    print $bridge_dev2;
     my $num2 = $num + 123;
     $cmd .= ' vif=mac='  . $mac_base . sprintf("%02x",$num2) .',bridge=' . $bridge_dev2;
   }
