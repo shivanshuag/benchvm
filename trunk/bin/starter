@@ -181,7 +181,7 @@ sub start_image_kvm {
     $cmd .= ' -nographic';
   }
 
-  $cmd .= ' -drive file=./' . $img;
+  $cmd .= ' -drive if=ide,file=./' . $img;
 
   if($no_cache)
   {
