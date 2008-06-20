@@ -167,7 +167,7 @@ sub start_image_kvm {
   $cmd .= ' -kernel /boot/vmlinuz-' . $kernel_ver;
   $cmd .= ' -initrd /boot/initrd.img-' . $kernel_ver;
 
-  $cmd .= ' -append "root=UUID=' . $root_uuid . ' console=tty0 console=ttyS0,115200n8"';
+  $cmd .= ' -append "root=/dev/sda2=' . $root_uuid . ' console=tty0 console=ttyS0,115200n8"';
   $cmd .= ' -net nic,vlan=0,macaddr=' . $mac_base . sprintf("%02x",$num);
   $cmd .= ' -net tap,vlan=0,ifname=tap' . $num . ',script='.$network_script;
 
@@ -181,7 +181,7 @@ sub start_image_kvm {
     $cmd .= ' -nographic';
   }
 
-  $cmd .= ' -drive file=' . $img;
+  $cmd .= ' -drive file=./' . $img;
 
   if($no_cache)
   {
