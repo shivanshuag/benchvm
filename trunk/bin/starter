@@ -181,12 +181,12 @@ sub start_image_kvm {
     $cmd .= ' -nographic';
   }
 
+  $cmd .= ' -drive file=' . $img;
+
   if($no_cache)
   {
-    $cmd .= ' cache=off'
+    $cmd .= ',cache=off'
   }
-
-  $cmd .= ' ' . $img;
 
 
   if (!($watch)) {
