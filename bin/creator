@@ -67,7 +67,7 @@ my $phoronix_test_suite = 0;
 
 #Debootstrap Options
 my $arch = 0;
-my $apt_include = 'openssh-server,apache2,libapache2-mod-php5,build-essential,time,screen,wget,language-pack-en,language-pack-en-base';
+my $apt_include = 'openssh-server,syslog-ng,apache2,libapache2-mod-php5,build-essential,time,screen,wget,language-pack-en,language-pack-en-base';
 my $apt_exclude = 'initramfs-tools';
 my $distro = 'hardy';
 my $mirror = 0;
