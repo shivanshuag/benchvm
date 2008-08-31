@@ -149,7 +149,7 @@ sub get_root_uuid {
   $uuid_root =~ s/"//g;
   log_info('INFO: Found root UUID: ' . $uuid_root);
 
-  ex_quiet('kpartx -dv ' . $dev_device,
+  ex_quiet('sleep 3 && kpartx -dv ' . $dev_device,
            'Removing Partition Device Mappings', 1);
   ex_quiet('losetup -d ' . $dev_device,
 	   'Removing Loopback Device', 1);
@@ -199,6 +199,7 @@ sub start_image_kvm {
 
 sub start_image_xen {
   my($num, $root_uuid, $kernel_ver, $img) = @_;
+$kernel_ver = '2.6.27-rc4';
   if($num >= 155){
     log_fatal('Max number of images supported is currently 154');
   }
@@ -208,11 +209,17 @@ sub start_image_xen {
   my $cmd = 'xm create /dev/null';
   $cmd .= ' name=benchvm' . $num;
   $cmd .= ' memory=' . $mem;
-  $cmd .= ' kernel=/boot/vmlinuz-' . $kernel_ver;
-  $cmd .= ' ramdisk=/boot/initrd.img-' . $kernel_ver;
-  $cmd .= ' disk=tap:aio:' . $img . ',hda,w';
+
+$cmd .= ' kernel="/usr/lib/xen/boot/hvmloader"';
+$cmd .= ' builder="hvm"'; 
+$cmd .= ' device_model=/usr/lib64/xen/bin/qemu-dm';
+$cmd .= ' vnc=1';
+  $cmd .= ' disk=file:' . $img . ',hda,w';
+#  $cmd .= ' kernel=/boot/vmlinuz-' . $kernel_ver;
+#  $cmd .= ' ramdisk=/boot/initrd.img-' . $kernel_ver;
+#  $cmd .= ' disk=tap:aio:' . $img . ',xvda,w';
 #  $cmd .= ' root=UUID=' . $root_uuid;
-  $cmd .= ' root=/dev/hda2';
+#  $cmd .= ' root=/dev/xvda2';
   $cmd .= ' vif=mac=' . $mac_base . sprintf("%02x",$num) .',bridge=' . $bridge_dev;
 
   if($network_script2) {
@@ -226,7 +233,7 @@ sub start_image_xen {
   $cmd .= ' on_poweroff=destroy';
   $cmd .= ' on_reboot=restart';
   $cmd .= ' on_crash=preserve';
-  $cmd .= ' extra=xencons=tty';
+  #$cmd .= ' extra=console=hvc0';
 
   if ($watch) {
     $cmd .= ' -c'; 
