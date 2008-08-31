@@ -305,7 +305,7 @@ sub run_modify_filesystem {
   ex_quiet('rm -rf ' . $dir  . '/root/*',
            "Removing exsisting /root/* files");
   ex_quiet('rm -rf ' . $dir  . '/usr/src/*',
-           "Removing exsisting /usr/src/* files");
+           "Removing existing /usr/src/* files");
   ex_quiet('chroot ' . $dir . ' apt-get clean', "Clearing Guest Apt Cache");
   ex_quiet('echo benchvm> ' . $dir . '/etc/hostname', "Setting Guest Hostname");
   log_info('TASK: Setting guest\'s /etc/rc.local');
@@ -316,6 +316,26 @@ sub run_modify_filesystem {
   if(!(-e $dir  . '/root/.ssh')) {
     ex_quiet('mkdir ' . $dir  . '/root/.ssh', "Creating .ssh dir");
   }
+  my $uname_r = `uname -r`;
+  chomp($uname_r);
+
+  #FIXME
+  #harcode uname_r for now
+  $uname_r = "2.6.27-rc4";
+
+  my $kernel_image = 'vmlinuz-' . $uname_r; 
+  my $kernel_options = 'root=/dev/hda2 ro ';
+  my $initrd = 'initrd.img-' . $uname_r;
+  #install grub
+  ex_quiet('mkdir -p ' . $dir . '/boot/grub', "Making boot/grub directory");
+  ex_quiet('cp /boot/' . $kernel_image  . ' ' . $dir . '/boot/', "Copying kernel image");
+  ex_quiet('cp /boot/' . $initrd  . ' ' . $dir . '/boot/', "Copying initrd image");
+  ex_quiet('cp /boot/grub/stage1 ' . $dir . '/boot/grub',"Copying stage 1");
+  ex_quiet('cp /boot/grub/stage2 ' . $dir . '/boot/grub',"Copying stage 2");
+  ex_quiet('cp /boot/grub/e2fs_stage1_5 ' . $dir . '/boot/grub',"Copying stage 1.5");
+  my $menu_lst = "timeout 3\ndefault 0\n\ntitle benchvm\nroot (hd0,1)\nkernel /boot/" . $kernel_image . ' ' . $kernel_options . "\n" . 'initrd /boot/' . $initrd;
+  ex_quiet("echo '" . $menu_lst . "' > " . $dir . '/boot/grub/menu.lst',"Write menu.lst file");
+ 
   ex_quiet('rm -rf ' . $dir . $guest_isolation_suite_dir,
            "Removing current isolation suite on guest");
 
@@ -382,6 +402,7 @@ sub run_create_image_file {
   ex_quiet('parted --script ' . $img_file . ' mkpart primary ext2 ' .
            $swap_size_mb . ' ' . ($image_size_b/1024/1024),
            "Making Root Partition");
+  ex_quiet('parted --script ' . $img_file . ' set 2 boot on');
 }
 
 # Create ssh key if nessicary
@@ -456,7 +477,10 @@ sub provision_image {
   for (my $x=0; $x < $img_count; $x++) {
     ex_quiet('cp -f ' . $img_file  . ' ' . $img_dir . '/image-' . $x . '.img',
              'Copying Image ' . $x);
+    ex_quiet('echo "device (hd0) ' . $img_dir . '/image-' . $x . '.img' . '\nroot (hd0,1)\nsetup (hd0)\nquit" > /tmp/benchvm-device.map',"writing device map to temporary file");
+    ex_quiet('grub --device-map=/dev/null < /tmp/benchvm-device.map', "adding grub mapping to image");
   }
+  #ex_quiet('rm /tmp/benchvm-device.map', "cleanup temporary device map file");
 }
 
 ###########
