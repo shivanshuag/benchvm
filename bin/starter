@@ -29,8 +29,9 @@ my $kvm = 0;
 my $xen = 0;
 my $watch = 0;
 my $graphics = 0;
-
 my $no_cache = 0;
+my $full_virt = 0;
+my $bootloader_pvgrub = 0;
 
 GetOptions ('h|help' => \$help,
             'x|xen' => \$xen,
@@ -41,6 +42,8 @@ GetOptions ('h|help' => \$help,
             'n|network_script=s' => \$network_script,
             's|network_script2=s' => \$network_script2,
             'c|cache_off' => \$no_cache,
+            'f|full_virt' => \$full_virt,
+            'b|bootloader_pvgrub' => \$bootloader_pvgrub,
             'v' => \$verbose);
 
 # Display help
@@ -55,6 +58,8 @@ if($help || ($#ARGV+1) != 2 || ($xen == $kvm)){
   print "  -n, --network_script\t\tload alternate network script\n";
   print "  -s, --network_script2\t\tload second network script\n";
   print "  -c, --cache_off\t\tturn off disk cache (KVM)\n";
+  print "  -f, --full_virt\t\tFull Virt bootloader Xen HVM\n";
+  print "  -b, --bootloader_pvgrub PV GRUB Bootloader\t\tPV GRUB bootloader (Xen)\n";
   print "  -v, --verbose\t\t\tverbose\n";
   print "  -h --help\t\t\tThis.\n";
   exit(1);
@@ -209,17 +214,31 @@ $kernel_ver = '2.6.27-rc4';
   my $cmd = 'xm create /dev/null';
   $cmd .= ' name=benchvm' . $num;
   $cmd .= ' memory=' . $mem;
-
+if($full_virt)
+{
 $cmd .= ' kernel="/usr/lib/xen/boot/hvmloader"';
 $cmd .= ' builder="hvm"'; 
 $cmd .= ' device_model=/usr/lib64/xen/bin/qemu-dm';
+$cmd .= ' disk=tap:aio:' . $img . ',hda,w';
 $cmd .= ' vnc=1';
-  $cmd .= ' disk=file:' . $img . ',hda,w';
-#  $cmd .= ' kernel=/boot/vmlinuz-' . $kernel_ver;
-#  $cmd .= ' ramdisk=/boot/initrd.img-' . $kernel_ver;
-#  $cmd .= ' disk=tap:aio:' . $img . ',xvda,w';
-#  $cmd .= ' root=UUID=' . $root_uuid;
-#  $cmd .= ' root=/dev/xvda2';
+}
+
+elsif($bootloader_pvgrub)
+{
+$cmd .= ' kernel="/usr/lib/xen/boot/pv-grub-x86_64.gz"';
+$cmd .= ' extra="(hd0,1)/boot/grub/menu.lst"';
+$cmd .= ' disk=file:' . $img . ',hda,w';
+}
+
+else
+{
+  $cmd .= ' kernel=/boot/vmlinuz-' . $kernel_ver;
+  $cmd .= ' ramdisk=/boot/initrd.img-' . $kernel_ver;
+  $cmd .= ' disk=tap:aio:' . $img . ',xvda,w';
+  $cmd .= ' root=UUID=' . $root_uuid;
+  $cmd .= ' root=/dev/xvda2';
+  $cmd .= ' extra=console=hvc0';
+}
   $cmd .= ' vif=mac=' . $mac_base . sprintf("%02x",$num) .',bridge=' . $bridge_dev;
 
   if($network_script2) {
@@ -230,14 +249,20 @@ $cmd .= ' vnc=1';
     $cmd .= ' vif=mac='  . $mac_base . sprintf("%02x",$num2) .',bridge=' . $bridge_dev2;
   }
 
+
+  if ($watch) {
+    if($full_virt) { 
+      $cmd .= ' vncviewer="yes"';
+    }
+    else {
+      $cmd .= ' -c'; 
+    }
+  }
+
+  #options common to all types of boot loaders
   $cmd .= ' on_poweroff=destroy';
   $cmd .= ' on_reboot=restart';
   $cmd .= ' on_crash=preserve';
-  #$cmd .= ' extra=console=hvc0';
-
-  if ($watch) {
-    $cmd .= ' -c'; 
-  }
 
   return $cmd;
 }
