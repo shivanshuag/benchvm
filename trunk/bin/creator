@@ -356,6 +356,9 @@ sub run_modify_filesystem {
            "Removing exsisting /var/www/* files");
   my $kernel_ver = `uname -r`;
   chomp($kernel_ver);
+  #FIXME
+  #hardcode kernel_ver for now
+  $kernel_ver = '2.6.27-rc4';
   ex_verbose('cp -ra /lib/modules/' . $kernel_ver . " " . $dir . '/lib/modules', "copying kernel modules");
   if ($specweb_workload) {
 	ex_verbose($install_dir . 'bin/clean_workload.sh');
