@@ -54,6 +54,9 @@ my $swap_size_mb = 512;
 my $free_size_mb = 4096;  
 my $is_mounted = 0;
 my $base_ip = '192.168.133';
+my $ip_start_range = 100;
+my $second_ip_start_range = 201;
+my $second_base_ip = '128.153.146';
 my $install_dir = '/root/devel/benchvm/';
 
 #specweb workload
@@ -86,7 +89,10 @@ GetOptions ('r|install_dir=s' => \$install_dir,
             'i|isolation' => \$isolation_suite,
             't|phoronix' => \$phoronix_test_suite,
             'p|provision=i' => \$provision,
-            'b|base_ip=i' => \$base_ip,
+            'b|base_ip=s' => \$base_ip,
+            'r|ip_start_range=s' => \$ip_start_range,
+            'z|second_ip_start_range=s' => \$second_ip_start_range,
+            's|second_base_ip=s' => \$second_base_ip,
             'c|clean' => \$clean,
             'v' => \$verbose,
             'h|help' => \$help);
@@ -149,9 +155,11 @@ sub write_rclocal {
   open (RCLOCAL, ">$rclocal") or log_fatal("Unable to open guest /etc/rc.local");
   print RCLOCAL "#!/bin/bash\n";
   print RCLOCAL "BASEIP=$base_ip\n";
+  print RCLOCAL "SECONDBASEIP=$second_base_ip\n";
   #Get the last two hex digits of our MAC, convert to decimal. 
   print RCLOCAL "let DEC=0x`ifconfig eth0 | grep HWaddr | sed 's/.*..:..:..:..:..://'`\n";
-  print RCLOCAL "LASTDIGITS=\$((\$DEC+100))\n";
+  print RCLOCAL "LASTDIGITS=\$((\$DEC+$ip_start_range))\n";
+  print RCLOCAL "SECONDLASTDIGITS=\$((\$DEC+$second_ip_start_range))\n";
   #Set /etc/network/interfaces with a static IP
   print RCLOCAL "echo \"auto lo\"> /etc/network/interfaces\n";
   print RCLOCAL "echo \"iface lo inet loopback\">> /etc/network/interfaces\n";
@@ -160,7 +168,13 @@ sub write_rclocal {
   #Use the decimal value we calculated earlier here.
   print RCLOCAL "echo \"  address \${BASEIP}.\${LASTDIGITS}\">> /etc/network/interfaces\n";
   print RCLOCAL "echo \"  netmask 255.255.255.0\">> /etc/network/interfaces\n";
-  print RCLOCAL "echo \"  broadcast \${BASEIP}.0\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"  broadcast \${SECONDBASEIP}.0\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"auto eth1\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"iface eth1 inet static\">> /etc/network/interfaces\n";
+  #Use the decimal value we calculated earlier here.
+  print RCLOCAL "echo \"  address \${SECONDBASEIP}.\${SECONDLASTDIGITS}\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"  netmask 255.255.255.0\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"  gateway \${SECONDBASEIP}.1\">> /etc/network/interfaces\n";
   #Set a hostname
   print RCLOCAL "echo \"benchvm\${DEC}\" > /etc/hostname\n";
   print RCLOCAL "hostname -F /etc/hostname\n";
@@ -175,21 +189,6 @@ sub write_rclocal {
   close RCLOCAL;
 }
 
-#Write /etc/event.d/ttyS0, so we can have serial access in kvm
-sub write_getty {
-  my($path) = @_;
-  open (GETTY, ">$path") or log_fatal("Unable to open guest /etc/event.d/ttyS0");
-  print GETTY "start on runlevel 2\n";
-  print GETTY "start on runlevel 3\n";
-  print GETTY "start on runlevel 4\n";
-  print GETTY "start on runlevel 5\n";
-  print GETTY "stop on runlevel 0\n";
-  print GETTY "stop on runlevel 1\n";
-  print GETTY "stop on runlevel 6\n";
-  print GETTY "respawn\n";
-  print GETTY "exec /sbin/getty 115200 ttyS0\n";
-  close GETTY;
-}
 
 #Use the volume UUIDs for the image to set /etc/fstab on the guest filesystem
 sub write_fstab {
@@ -312,7 +311,6 @@ sub run_modify_filesystem {
   log_info('TASK: Setting guest\'s /etc/rc.local');
   write_rclocal($dir . '/etc/rc.local');
   log_info('TASK: Setting guest\'s /etc/event.d/ttyS0');
-  write_getty($dir . '/etc/event.d/ttyS0');
   sshkeygen();
   if(!(-e $dir  . '/root/.ssh')) {
     ex_quiet('mkdir ' . $dir  . '/root/.ssh', "Creating .ssh dir");
