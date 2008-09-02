@@ -86,6 +86,7 @@ GetOptions ('r|install_dir=s' => \$install_dir,
             'i|isolation' => \$isolation_suite,
             't|phoronix' => \$phoronix_test_suite,
             'p|provision=i' => \$provision,
+            'b|base_ip=i' => \$base_ip,
             'c|clean' => \$clean,
             'v' => \$verbose,
             'h|help' => \$help);
