@@ -45,7 +45,7 @@ GetOptions ('h|help' => \$help,
             'c|cache_off' => \$no_cache,
             'f|full_virt' => \$full_virt,
             'b|bootloader_pvgrub' => \$bootloader_pvgrub,
-            'x|kvm_command=s' => \$kvm_command,
+            'd|kvm_command=s' => \$kvm_command,
             'v' => \$verbose);
 
 # Display help
