@@ -79,6 +79,12 @@ my $mirror = 0;
 #DD Config Options
 my $dd_bs = 1024*1024;
 
+#Guest type options
+my $kvm = 0;
+my $xen = 0;
+my $full_virt = 0;
+my $paravirt = 0;
+
 GetOptions ('r|install_dir=s' => \$install_dir,
             'a|arch=s' => \$arch,
             'd|distro=s' => \$distro,
@@ -86,6 +92,10 @@ GetOptions ('r|install_dir=s' => \$install_dir,
             'm|mirror=s' => \$mirror,
             'f|free=i' => \$free_size_mb,
             'w|workload' => \$specweb_workload,
+            'k|kvm' => \$kvm,
+            'x|xen' => \$xen,
+            'n|full_virt' => \$full_virt,
+            'o|paravirt' => \$paravirt,
             'i|isolation' => \$isolation_suite,
             't|phoronix' => \$phoronix_test_suite,
             'p|provision=i' => \$provision,
@@ -96,23 +106,26 @@ GetOptions ('r|install_dir=s' => \$install_dir,
             'c|clean' => \$clean,
             'v' => \$verbose,
             'h|help' => \$help);
-
 # Display help
-if($help || ($#ARGV+1) != 1){
+if($help || ($#ARGV+1) != 1 || ($xen == $kvm) || ($paravirt == $full_virt)){
   print 'Usage: [options] imagename' . "\n";
-  print "  -r <install_dir>, --install_dir <install_dir>\t\tSpecify alternate benchvm install directory\n";
+  print "  -r <install_dir>, --install_dir <install_dir>\tSpecify alternate benchvm install directory\n";
   print "  -a <arch>, --arch <arch>\t\t\tArchitecture to Install\n";
   print "  -d <distro>, --distro <distro>\t\tDistro to Install\n";
   print "  -l <location>, --location <location>\t\tLocation to Create images\n";
   print "  -m <mirror>, --mirror <mirror>\t\tMirror to Intall from\n";
   print "  -f <free space>, --f <free space>\t\tFree space in created images\n";
-  print "  -w, --workload\t\tGet www workload for specweb, include in images\n";
-  print "  -i, --isolation\t\tInclude isolation suite in the image\n";
-  print "  -t, --phoronix_suite\t\tInclude phoronix test suite in the image\n";
-  print "  -p <num>, --provision <num>\t\tProvision <num> copies of previously created image\n";
-  print "  --clean\t\t\t\tclean old image build\n";
-  print "  -v\t\t\t\tverbose\n";
-  print "  -h --help\t\t\t\t\tThis.\n";
+  print "  -w, --workload\t\t\t\tGet www workload for specweb, include in images\n";
+  print "  -k, --kvm\t\t\t\t\tMake a kvm guest. Don't mix with -x\n";
+  print "  -x, --xen\t\t\t\t\tMake a xen guest. Don't mix with -k\n";
+  print "  -n -- full_virt\t\t\t\tMake a full virt guest. Don't mix with -o\n";
+  print "  -o --paravirt\t\t\t\t\tMake a paravirt guest. Don't mix with -f\n"; 
+  print "  -i, --isolation\t\t\t\tInclude isolation suite in the image\n";
+  print "  -t, --phoronix_suite\t\t\t\tInclude phoronix test suite in the image\n";
+  print "  -p <num>, --provision <num>\t\t\tProvision <num> copies of previously created image\n";
+  print "  --clean\t\t\t\t\tclean old image build\n";
+  print "  -v, --verbose\t\t\t\t\tBe verbose during execution of script and commands\n";
+  print "  -h --help\t\t\t\t\tDisplay help message\n";
   exit(1);
 }
 #Parse Command Line vars after options
@@ -193,11 +206,46 @@ sub write_rclocal {
 #Use the volume UUIDs for the image to set /etc/fstab on the guest filesystem
 sub write_fstab {
   my($fstab, $root_uuid, $swap_uuid) = @_;
-  open (FSTAB, ">$fstab") or log_fatal("Unable to open guest /etc/fstab");
+  open (FSTAB, ">$fstab") or log_fatal("Unable to open guest $fstab");
   print FSTAB "proc\t/proc\tproc\tdefaults\t0\t0\n";
   print FSTAB "UUID=" . $root_uuid . "\t/\text3\tdefaults,errors=remount-ro\t0\t1\n";
   print FSTAB "UUID=" . $swap_uuid . "\tnone\tswap\tsw\t0\t0\n";
   close FSTAB;
+}
+
+#Write the menu.lst files for each of the guest types
+sub write_grub_conf {
+  my($grub_conf, $root_uuid) = @_;
+  my $grub_root = "(hd0,1)";
+  #FIXME: hard coded kernel for now
+  my $kernel_path = "/boot/vmlinuz-2.6.27-rc4";
+  my $initrd_path = "/boot/initrd.img-2.6.27-rc4";
+  
+  open (GRUB_CONF, ">$grub_conf") or log_fatal("Unable to open guest $grub_conf");
+  print GRUB_CONF "title benchvm ";
+  if($xen && $paravirt) {
+    print GRUB_CONF "Xen PV\nroot $grub_root\nkernel $kernel_path root=UUID=$root_uuid ro console=hvc0\n";
+  }
+  elsif($xen && $full_virt) {
+    print GRUB_CONF "Xen HVM\nroot $grub_root\nkernel $kernel_path root=UUID=$root_uuid ro console=tty0\n" ;
+  }
+  elsif($kvm && $full_virt) {
+    print GRUB_CONF "KVM Emulated drivers\nroot $grub_root\nkernel $kernel_path root=UUID=$root_uuid ro console=tty0\n";
+  }
+  elsif($kvm && $paravirt) {
+    print GRUB_CONF "KVM Paravirt drivers\nroot $grub_root\nkernel $kernel_path root=UUID=$root_uuid ro console=tty0\n";
+  }
+  else {
+   log_fatal("Unable to get guest type for grub conf file\n");
+ }
+ print GRUB_CONF "initrd $initrd_path\n";
+}
+
+sub modify_getty {
+  my($getty_conf) = @_;
+  if($xen && $paravirt) {
+    system("sed -ie 's/hvc0/tty1/g' $getty_conf") or log_fatal("Unable to modify getty conf");
+  }  
 }
 
 #Run a shell command
@@ -258,7 +306,7 @@ sub clean_env() {
     ex_quiet('umount ' . $mount_dir, "[CLEAN] Unmounting Temporary Directory", 1);
   }
   if($dev_device) {
-    ex_quiet('kpartx -dv ' . $dev_device,
+    ex_quiet('sleep 3 && kpartx -dv ' . $dev_device,
              "[CLEAN] Removing Partition Device Mappings", 1);
     ex_quiet('losetup -d ' . $dev_device,
              "[CLEAN] Removing Loopback Device", 1);
@@ -310,7 +358,6 @@ sub run_modify_filesystem {
   ex_quiet('echo benchvm> ' . $dir . '/etc/hostname', "Setting Guest Hostname");
   log_info('TASK: Setting guest\'s /etc/rc.local');
   write_rclocal($dir . '/etc/rc.local');
-  log_info('TASK: Setting guest\'s /etc/event.d/ttyS0');
   sshkeygen();
   if(!(-e $dir  . '/root/.ssh')) {
     ex_quiet('mkdir ' . $dir  . '/root/.ssh', "Creating .ssh dir");
@@ -332,9 +379,6 @@ sub run_modify_filesystem {
   ex_quiet('cp /boot/grub/stage1 ' . $dir . '/boot/grub',"Copying stage 1");
   ex_quiet('cp /boot/grub/stage2 ' . $dir . '/boot/grub',"Copying stage 2");
   ex_quiet('cp /boot/grub/e2fs_stage1_5 ' . $dir . '/boot/grub',"Copying stage 1.5");
-  my $menu_lst = "timeout 3\ndefault 0\n\ntitle benchvm\nroot (hd0,1)\nkernel /boot/" . $kernel_image . ' ' . $kernel_options . "\n" . 'initrd /boot/' . $initrd;
-  ex_quiet("echo '" . $menu_lst . "' > " . $dir . '/boot/grub/menu.lst',"Write menu.lst file");
- 
   ex_quiet('rm -rf ' . $dir . $guest_isolation_suite_dir,
            "Removing current isolation suite on guest");
 
@@ -458,6 +502,10 @@ sub run_copy_fs_to_image {
   my($local_root, $tmp_mount_dir)=@_;
   log_info('TASK: Setting guest\'s /etc/fstab');
   write_fstab($local_root . '/etc/fstab', $uuid_root, $uuid_swap);
+  log_info('TASK: Setting guest\'s grub configuration');
+  write_grub_conf($local_root . '/boot/grub/menu.lst', $uuid_root);
+  log_info('TASK: Modifying guest getty file');
+  modify_getty($local_root . '/etc/event.d/tty1');
   ex_quiet('mkdir -p ' . $tmp_mount_dir, "Creating Temporary Mount Directory");
   ex_quiet('mount ' . $dev_root_partition . ' ' . $tmp_mount_dir,
            "Mounting Loopback Device");
