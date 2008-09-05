@@ -100,14 +100,14 @@ GetOptions ('r|install_dir=s' => \$install_dir,
             't|phoronix' => \$phoronix_test_suite,
             'p|provision=i' => \$provision,
             'b|base_ip=s' => \$base_ip,
-            'r|ip_start_range=s' => \$ip_start_range,
+            'q|ip_start_range=s' => \$ip_start_range,
             'z|second_ip_start_range=s' => \$second_ip_start_range,
             's|second_base_ip=s' => \$second_base_ip,
             'c|clean' => \$clean,
             'v' => \$verbose,
             'h|help' => \$help);
 # Display help
-if($help || ($#ARGV+1) != 1 || ($xen == $kvm) || ($paravirt == $full_virt)){
+if($help || ($#ARGV+1) != 1 || ($provision == 0 && $xen == $kvm) || ($provision == 0 && $paravirt == $full_virt)){
   print 'Usage: [options] imagename' . "\n";
   print "  -r <install_dir>, --install_dir <install_dir>\tSpecify alternate benchvm install directory\n";
   print "  -a <arch>, --arch <arch>\t\t\tArchitecture to Install\n";
@@ -123,6 +123,7 @@ if($help || ($#ARGV+1) != 1 || ($xen == $kvm) || ($paravirt == $full_virt)){
   print "  -i, --isolation\t\t\t\tInclude isolation suite in the image\n";
   print "  -t, --phoronix_suite\t\t\t\tInclude phoronix test suite in the image\n";
   print "  -p <num>, --provision <num>\t\t\tProvision <num> copies of previously created image\n";
+#FIXME add help for b,q,z,s options
   print "  --clean\t\t\t\t\tclean old image build\n";
   print "  -v, --verbose\t\t\t\t\tBe verbose during execution of script and commands\n";
   print "  -h --help\t\t\t\t\tDisplay help message\n";
@@ -217,23 +218,25 @@ sub write_fstab {
 sub write_grub_conf {
   my($grub_conf, $root_uuid) = @_;
   my $grub_root = "(hd0,1)";
+  my $default_line = "default 0";
+  my $timeout_line = "timeout 10";
   #FIXME: hard coded kernel for now
   my $kernel_path = "/boot/vmlinuz-2.6.27-rc4";
   my $initrd_path = "/boot/initrd.img-2.6.27-rc4";
-  
+  my $common_grub_lines = "root $grub_root\nkernel $kernel_path root=UUID=$root_uuid ro"; 
   open (GRUB_CONF, ">$grub_conf") or log_fatal("Unable to open guest $grub_conf");
-  print GRUB_CONF "title benchvm ";
+  print GRUB_CONF "$default_line\n$timeout_line\n\ntitle benchvm ";
   if($xen && $paravirt) {
-    print GRUB_CONF "Xen PV\nroot $grub_root\nkernel $kernel_path root=UUID=$root_uuid ro console=hvc0\n";
+    print GRUB_CONF "Xen PV\n$common_grub_lines console=hvc0\n";
   }
   elsif($xen && $full_virt) {
-    print GRUB_CONF "Xen HVM\nroot $grub_root\nkernel $kernel_path root=UUID=$root_uuid ro console=tty0\n" ;
+    print GRUB_CONF "Xen HVM\n$common_grub_lines console=tty0\n" ;
   }
   elsif($kvm && $full_virt) {
-    print GRUB_CONF "KVM Emulated drivers\nroot $grub_root\nkernel $kernel_path root=UUID=$root_uuid ro console=tty0\n";
+    print GRUB_CONF "KVM Emulated drivers\n$common_grub_lines console=tty0\n";
   }
   elsif($kvm && $paravirt) {
-    print GRUB_CONF "KVM Paravirt drivers\nroot $grub_root\nkernel $kernel_path root=UUID=$root_uuid ro console=tty0\n";
+    print GRUB_CONF "KVM Paravirt drivers\n$common_grub_lines console=tty0\n";
   }
   else {
    log_fatal("Unable to get guest type for grub conf file\n");
@@ -530,7 +533,7 @@ sub provision_image {
     ex_quiet('echo "device (hd0) ' . $img_dir . '/image-' . $x . '.img' . '\nroot (hd0,1)\nsetup (hd0)\nquit" > /tmp/benchvm-device.map',"writing device map to temporary file");
     ex_quiet('grub --device-map=/dev/null < /tmp/benchvm-device.map', "adding grub mapping to image");
   }
-  #ex_quiet('rm /tmp/benchvm-device.map', "cleanup temporary device map file");
+  ex_quiet('rm /tmp/benchvm-device.map', "cleanup temporary device map file");
 }
 
 ###########
@@ -538,34 +541,34 @@ sub provision_image {
 ###########
 
 
-
-if($clean) {
-  clean_guest();
-  exit(0);
-}
-
-if (-e $dbs_dir) {
-  log_info("INFO: Found old Debootstrap Directory, skipping debootstrap");
-} else {
-  run_create_filesystem($dbs_dir);
-}
-
-if (-e $location . $img_name) {
-  log_info("INFO: Found old image file, skipping image creation");
-} else {
-  run_modify_filesystem($dbs_dir);
-  run_create_image_file($location . $img_name, $dbs_dir);
-  run_map_image($location . $img_name);
-  run_format_image();
-  run_get_partition_uuids();
-  run_copy_fs_to_image($dbs_dir, $mount_dir);
-}
-
-clean_env();
-
 if($provision) {
   provision_image($location . $img_name, $provision_dir, $provision);
   exit(0);
+}
+else {
+  if($clean) {
+    clean_guest();
+    exit(0);
+  }
+
+  if (-e $dbs_dir) {
+    log_info("INFO: Found old Debootstrap Directory, skipping debootstrap");
+  } else {
+    run_create_filesystem($dbs_dir);
+  }
+
+  if (-e $location . $img_name) {
+    log_info("INFO: Found old image file, skipping image creation");
+  } else {
+    run_modify_filesystem($dbs_dir);
+    run_create_image_file($location . $img_name, $dbs_dir);
+    run_map_image($location . $img_name);
+    run_format_image();
+    run_get_partition_uuids();
+    run_copy_fs_to_image($dbs_dir, $mount_dir);
+  }
+
+  clean_env();
 }
 
 
