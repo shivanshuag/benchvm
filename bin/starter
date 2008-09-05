@@ -171,17 +171,34 @@ sub start_image_kvm {
     
   my $cmd = $kvm_command;
   $cmd .= ' -m ' . $mem;
-  $cmd .= ' -net nic,model=virtio,vlan=0,macaddr=' . $mac_base . sprintf("%02x",$num);
+  $cmd .= ' -net nic,';
+  if($full_virt) {
+    $cmd .= 'model=e1000';
+  }
+  else {
+    $cmd .= 'model=virtio';
+  }
+  $cmd .= ',vlan=0,macaddr=' . $mac_base . sprintf("%02x",$num);
   $cmd .= ' -net tap,vlan=0,ifname=tap' . $num . ',script='.$network_script;
   if($network_script2) {
     my $num2 = $num + 123;
-    $cmd .= ' -net nic,vlan=1,macaddr=' . $mac_base . sprintf("%02x",$num2);
+    $cmd .= ' -net nic,';
+    if($full_virt) {
+      $cmd .= 'model=e1000';
+    }
+    else {
+      $cmd .= 'model=virtio';
+    }
+    $cmd .= ',vlan=1,macaddr=' . $mac_base . sprintf("%02x",$num2);
     $cmd .= ' -net tap,vlan=1,ifname=tap' . $num2 . ',script='.$network_script2;
   }
   
-
-    $cmd .= ' -drive file=' . $img . ',if=virtio,boot=on';
-
+    if($full_virt) {
+      $cmd .= ' -drive file=' . $img . ',if=ide';
+    }
+    else {
+      $cmd .= ' -drive file=' . $img . ',if=virtio,boot=on';
+   }
 #handle disk image
 #  if($no_cache) {
 #    $cmd .= ' -drive if=ide,file=./' . $img;
