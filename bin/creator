@@ -247,7 +247,7 @@ sub write_grub_conf {
 sub modify_getty {
   my($getty_conf) = @_;
   if($xen && $paravirt) {
-    system("sed -ie 's/hvc0/tty1/g' $getty_conf") or log_fatal("Unable to modify getty conf");
+    system("sed -ie 's/tty1/hvc0/g' $getty_conf");# or log_fatal("Unable to modify getty conf");
   }  
 }
 
