@@ -182,7 +182,7 @@ sub write_rclocal {
   #Use the decimal value we calculated earlier here.
   print RCLOCAL "echo \"  address \${BASEIP}.\${LASTDIGITS}\">> /etc/network/interfaces\n";
   print RCLOCAL "echo \"  netmask 255.255.255.0\">> /etc/network/interfaces\n";
-  print RCLOCAL "echo \"  broadcast \${SECONDBASEIP}.0\">> /etc/network/interfaces\n";
+  print RCLOCAL "echo \"  broadcast \${BASEIP}.0\">> /etc/network/interfaces\n";
   print RCLOCAL "echo \"auto eth1\">> /etc/network/interfaces\n";
   print RCLOCAL "echo \"iface eth1 inet static\">> /etc/network/interfaces\n";
   #Use the decimal value we calculated earlier here.
