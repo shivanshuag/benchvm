@@ -163,6 +163,8 @@ sub get_root_uuid {
   return $uuid_root;
 }
 
+ 
+
 sub start_image_kvm {
   my($num, $root_uuid, $kernel_ver, $img) = @_;
   if($num >= 155){
@@ -297,6 +299,9 @@ if($watch) {
 for(my $i=0; $i < $count; $i++){
   my $img_file = $imagedir . '/image-' . $i . '.img';
   if ($kvm) {
+    if(!-e '/dev/kvm') {
+      log_fatal('FATAL: kvm moduled not loaded');
+    }
     ex_verbose(start_image_kvm($i, $uuid, $version, $img_file),
     'Starting image ' . $i);
   } elsif ($xen) {
