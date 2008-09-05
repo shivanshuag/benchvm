@@ -353,6 +353,7 @@ sub run_create_filesystem {
 
 sub run_modify_filesystem {
   my($dir) = @_;
+  ex_quiet('apt-get -y install dpkg --reinstall', "Fix possible init scripts (i.e SSH)");
   ex_quiet('rm -rf ' . $dir  . '/root/*',
            "Removing exsisting /root/* files");
   ex_quiet('rm -rf ' . $dir  . '/usr/src/*',
