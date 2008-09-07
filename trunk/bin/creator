@@ -101,8 +101,8 @@ GetOptions ('r|install_dir=s' => \$install_dir,
             'p|provision=i' => \$provision,
             'b|base_ip=s' => \$base_ip,
             'q|ip_start_range=s' => \$ip_start_range,
-            'z|second_ip_start_range=s' => \$second_ip_start_range,
             's|second_base_ip=s' => \$second_base_ip,
+            'z|second_ip_start_range=s' => \$second_ip_start_range,
             'c|clean' => \$clean,
             'v' => \$verbose,
             'h|help' => \$help);
@@ -123,7 +123,10 @@ if($help || ($#ARGV+1) != 1 || ($provision == 0 && $xen == $kvm) || ($provision 
   print "  -i, --isolation\t\t\t\tInclude isolation suite in the image\n";
   print "  -t, --phoronix_suite\t\t\t\tInclude phoronix test suite in the image\n";
   print "  -p <num>, --provision <num>\t\t\tProvision <num> copies of previously created image\n";
-#FIXME add help for b,q,z,s options
+  print "  -b <base ip i.e 192.168.134>\t\t\tBase IP start for guets first NIC\n";
+  print "  -q <base ip start range i.e 100>\t\tBase IP start range for first NIC\n";
+  print "  -s <second IP start range i.e 128.153.146>\tBase IP start for second NIC\n";
+  print "  -z <second ip start range i.e. 151>\t\tBase IP start range for second NIC\n"; 
   print "  --clean\t\t\t\t\tclean old image build\n";
   print "  -v, --verbose\t\t\t\t\tBe verbose during execution of script and commands\n";
   print "  -h --help\t\t\t\t\tDisplay help message\n";
