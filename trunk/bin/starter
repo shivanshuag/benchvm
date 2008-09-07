@@ -34,7 +34,7 @@ my $full_virt = 0;
 my $paravirt = 0;
 my $bootloader_pvgrub = 0;
 my $kvm_command = 'qemu-system-x86_64';
-
+my $processors = 0;
 GetOptions ('h|help' => \$help,
             'x|xen' => \$xen,
             'k|kvm' => \$kvm,
@@ -47,6 +47,7 @@ GetOptions ('h|help' => \$help,
             'f|full_virt' => \$full_virt,
             'p|paravirt' => \$paravirt,
             'b|bootloader_pvgrub' => \$bootloader_pvgrub,
+            'r|processors=i' => \$processors,
             'd|kvm_command=s' => \$kvm_command,
             'v' => \$verbose);
 
@@ -64,6 +65,8 @@ if($help || ($#ARGV+1) != 2 || ($xen == $kvm) || ($full_virt == $paravirt)){
   print "  -c, --cache_off\t\tturn off disk cache (KVM)\n";
   print "  -f, --full_virt\t\tFull Virt bootloader Xen HVM\n";
   print "  -b, --bootloader_pvgrub PV GRUB Bootloader\t\tPV GRUB bootloader (Xen)\n";
+  print "  -r, --processors\t\tSet number of CPUs\n";
+  print "  -d, --kvm_commmand\t\tSet the KVM command, defaults to qemu-system-x86_64\n";
   print "  -v, --verbose\t\t\tverbose\n";
   print "  -h --help\t\t\tThis.\n";
   exit(1);
@@ -174,6 +177,9 @@ sub start_image_kvm {
   }
     
   my $cmd = $kvm_command;
+  if($processors != 0) {
+    $cmd .= ' -smp ' . $processors;
+  }
   $cmd .= ' -m ' . $mem;
   $cmd .= ' -net nic,';
   if($full_virt) {
@@ -229,6 +235,9 @@ $kernel_ver = '2.6.27-rc4';
   chomp($bridge_dev);
   my $cmd = 'xm create /dev/null';
   $cmd .= ' name=benchvm' . $num;
+  if($processors != 0) {
+    $cmd .= ' vcpus=' . $processors;
+  }
   $cmd .= ' memory=' . $mem;
 if($full_virt)
 {
