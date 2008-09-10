@@ -244,7 +244,7 @@ if($full_virt)
 $cmd .= ' kernel="/usr/lib/xen/boot/hvmloader"';
 $cmd .= ' builder="hvm"'; 
 $cmd .= ' device_model=/usr/lib64/xen/bin/qemu-dm';
-$cmd .= ' disk=tap:aio:' . $img . ',hda,w';
+$cmd .= ' disk=file:' . $img . ',hda,w';
 $cmd .= ' vnc=1';
 $cmd .= ' vncdisplay=' . $num; 
 }
